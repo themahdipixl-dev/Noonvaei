@@ -1,21 +1,19 @@
-# Bakery Tycoon – starter overlay
+# Bakery Tycoon (Expo SDK 55)
 
-This zip is an OVERLAY for a fresh Expo project (it intentionally has no package.json,
-so that `npx expo install` picks versions that match your Expo SDK / Expo Go).
+Full project: package.json, app.json, App.tsx are all at the repo root.
 
+## Local
 ```bash
-npx create-expo-app@latest bakery-tycoon --template blank-typescript
-cd bakery-tycoon
-# copy the contents of this zip into the project root (overwrite App.tsx / index.ts)
-npx expo install expo-gl expo-asset expo-file-system expo-status-bar \
-  react-native-safe-area-context @react-native-async-storage/async-storage
-npx expo install three @react-three/fiber
-npm i -D @types/three
+npm install
+npx expo install --fix   # aligns versions with your SDK if anything is off
 npx expo start
 ```
-In app.json set `"orientation": "portrait"` and `"platforms": ["android"]`.
 
-Layout:
-- src/game   pure logic + store + persistence (no React Native UI, no three)
-- src/scene  3D rendering only (reads state through useGame)
-- src/ui     2D overlay (HUD, buttons, offline popup)
+## Expo Snack (import from GitHub)
+Import the repo root. Run it on the Android tab / a real device with Expo Go
+(NOT the Web preview: @react-three/fiber/native needs expo-gl).
+
+## Layout
+- src/game   pure logic + store + persistence
+- src/scene  3D rendering only
+- src/ui     2D overlay
