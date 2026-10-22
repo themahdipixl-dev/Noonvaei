@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "Iran Bakery Tycoon",
+    "slug": "iran-bakery-tycoon",
+    "version": "0.1.0",
+    "sdkVersion": "55.0.0",
+    "orientation": "portrait",
+    "platforms": ["android"],
+    "userInterfaceStyle": "light"
+  }
+}

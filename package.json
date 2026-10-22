@@ -1,0 +1,12 @@
+{
+  "name": "iran-bakery-tycoon",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "expo": "~55.0.0",
+    "react": "*",
+    "react-native": "*",
+    "react-native-svg": "*",
+    "@react-native-async-storage/async-storage": "*"
+  }
+}
