@@ -12,3 +12,5 @@ export const STRINGS = {
   hours: 'ساعت',
   minutes: 'دقیقه',
 };
+STRINGS.title = 'نانوایی سنگک';
+STRINGS.next = 'سطح بعدی';

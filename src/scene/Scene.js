@@ -5,13 +5,16 @@ import { makeProjector, pts, boxColors } from './iso';
 import IsoBox from './IsoBox';
 import { Tanoor, TanoorFire } from './Tanoor';
 import Baker from './Baker';
+import { Steam, FloatCoins } from './Effects';
+import { TANOOR } from './Tanoor';
+import { formatRate } from '../ui/format';
 import { PALETTE } from './palette';
 
 const GRID = 5;
 const SLAB = 14;
 const TABLE = { x: 3.2, y: 0.5, w: 1.4, d: 0.9, h: 24 };
 
-export default function Scene({ level, children }) {
+export default function Scene({ level, income, children }) {
   const { width } = useWindowDimensions();
   const height = 340;
   const tileW = Math.min(72, width / 5.6);
@@ -48,6 +51,7 @@ export default function Scene({ level, children }) {
   }
 
   const bakerPos = project(1.0, 3.0, 0);
+  const tp = project(TANOOR.x + TANOOR.w / 2, TANOOR.y + TANOOR.d / 2, TANOOR.h);
 
   return (
     <View style={[styles.wrap, { height }]}>
@@ -64,6 +68,8 @@ export default function Scene({ level, children }) {
       </Svg>
       <TanoorFire project={project} width={width} height={height} />
       <Baker px={bakerPos.x} py={bakerPos.y} />
+      <Steam x={tp.x} y={tp.y - 14} />
+      <FloatCoins x={tp.x} y={tp.y - 40} text={'+' + formatRate(income)} />
       {children}
     </View>
   );

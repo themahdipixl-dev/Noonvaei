@@ -4,6 +4,7 @@ import { useGame } from './src/game/useGame';
 import Scene from './src/scene/Scene';
 import Hud from './src/ui/Hud';
 import UpgradeButton from './src/ui/UpgradeButton';
+import Background from './src/ui/Background';
 import OfflineCard from './src/ui/OfflineCard';
 import { STRINGS } from './src/config/strings';
 
@@ -20,9 +21,10 @@ export default function App() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f4e4c1" />
+      <Background />
+      <StatusBar barStyle="dark-content" backgroundColor="#ffeec4" />
       <Hud money={state.money} income={income} level={state.level} />
-      <Scene level={state.level}>
+      <Scene level={state.level} income={income}>
         <UpgradeButton level={state.level} cost={cost} canAfford={canAfford} onPress={upgrade} />
       </Scene>
       {state.offlineReport && (
@@ -35,7 +37,7 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: '#f4e4c1',
+    backgroundColor: '#f6c987',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0,
   },
   center: { alignItems: 'center', justifyContent: 'center' },

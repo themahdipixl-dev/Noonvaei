@@ -1,40 +1,61 @@
-import React, { useRef } from 'react';
-import { Animated, Pressable, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, Pressable, Text, View, StyleSheet } from 'react-native';
 import { STRINGS } from '../config/strings';
-import { formatNumber } from './format';
+import { formatNumber, toFa } from './format';
 
-export default function UpgradeButton({ cost, canAfford, onPress }) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const to = (v) => Animated.spring(scale, { toValue: v, useNativeDriver: true, speed: 40 }).start();
+export default function UpgradeButton({ level, cost, canAfford, onPress }) {
+  const press = useRef(new Animated.Value(1)).current;
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!canAfford) { pulse.setValue(1); return undefined; }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.04, duration: 600, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 600, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [canAfford, pulse]);
+
+  const to = (v) => Animated.spring(press, { toValue: v, useNativeDriver: true, speed: 40 }).start();
 
   return (
-    <Animated.View style={[styles.wrap, { transform: [{ scale }] }]}>
+    <Animated.View style={[styles.wrap, { transform: [{ scale: Animated.multiply(press, pulse) }] }]}>
       <Pressable
-        onPress={onPress}
-        onPressIn={() => to(0.95)}
-        onPressOut={() => to(1)}
-        disabled={!canAfford}
-        style={[styles.btn, !canAfford && styles.btnOff]}
+        onPress={onPress} onPressIn={() => to(0.94)} onPressOut={() => to(1)} disabled={!canAfford}
+        style={[styles.btn, !canAfford && styles.off]}
       >
-        <Text style={styles.title}>{STRINGS.upgrade}</Text>
-        <Text style={styles.cost}>{STRINGS.cost}: {formatNumber(cost)} 🪙</Text>
+        <View style={styles.shine} />
+        <View style={styles.icon}><Text style={styles.iconText}>🔥</Text></View>
+        <View style={styles.mid}>
+          <Text style={styles.title}>{STRINGS.upgrade}</Text>
+          <Text style={styles.sub}>{STRINGS.level} {toFa(level)} ← {toFa(level + 1)}</Text>
+        </View>
+        <View style={[styles.cost, !canAfford && styles.costOff]}>
+          <Text style={styles.costText}>🪙 {formatNumber(cost)}</Text>
+        </View>
       </Pressable>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', bottom: 16, left: 24, right: 24 },
+  wrap: { position: 'absolute', bottom: 12, left: 16, right: 16 },
   btn: {
-    backgroundColor: '#d9822b',
-    borderRadius: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderBottomWidth: 5,
-    borderBottomColor: '#9c5614',
-    elevation: 4,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#e8892a', borderRadius: 22, overflow: 'hidden',
+    borderWidth: 3, borderColor: '#fff0cc', borderBottomWidth: 7, borderBottomColor: '#a65a12',
+    paddingVertical: 10, paddingHorizontal: 12, elevation: 6,
   },
-  btnOff: { backgroundColor: '#b9a88f', borderBottomColor: '#8f806a' },
+  off: { backgroundColor: '#bfae92', borderBottomColor: '#8f806a' },
+  shine: { position: 'absolute', top: 0, left: 0, right: 0, height: '45%', backgroundColor: 'rgba(255,255,255,0.2)' },
+  icon: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff3d1', alignItems: 'center', justifyContent: 'center' },
+  iconText: { fontSize: 24 },
+  mid: { flex: 1, marginHorizontal: 12 },
   title: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  cost: { color: '#fff4e0', fontSize: 13, marginTop: 2 },
+  sub: { color: '#ffeccb', fontSize: 12, marginTop: 1 },
+  cost: { backgroundColor: '#7a3b0c', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 6 },
+  costOff: { backgroundColor: '#6b5a44' },
+  costText: { color: '#ffe9a8', fontWeight: 'bold', fontSize: 15 },
 });
