@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StatusBar, StyleSheet, Platform } from 'react-native';
 import { useGame } from './src/game/useGame';
 import WorldMap from './src/world/WorldMap';
 import Hud from './src/ui/Hud';
 import UpgradePanel from './src/ui/UpgradePanel';
 import OfflineCard from './src/ui/OfflineCard';
+import BottomBar, { BOTTOM_BAR_HEIGHT } from './src/ui/BottomBar';
+import ComingSoon from './src/ui/ComingSoon';
 import { STRINGS } from './src/config/strings';
 
 export default function App() {
   const { state, ready, income, info, level, costs, upgrade, dismissOffline } = useGame();
+  const [tab, setTab] = useState('home'); // shop | cards | home | upgrade | minigames
 
   if (!ready) {
     return (
@@ -18,6 +21,8 @@ export default function App() {
     );
   }
 
+  const panelBottom = BOTTOM_BAR_HEIGHT + 10;
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffeec4" />
@@ -26,13 +31,23 @@ export default function App() {
       <View style={styles.hud} pointerEvents="none">
         <Hud money={state.money} income={income} level={level} bottleneck={info.bottleneck} />
       </View>
-      <UpgradePanel
-        levels={state.levels}
-        costs={costs}
-        money={state.money}
-        bottleneck={info.bottleneck}
-        onUpgrade={upgrade}
-      />
+
+      {tab === 'upgrade' && (
+        <UpgradePanel
+          levels={state.levels}
+          costs={costs}
+          money={state.money}
+          bottleneck={info.bottleneck}
+          onUpgrade={upgrade}
+          bottom={panelBottom}
+        />
+      )}
+      {(tab === 'shop' || tab === 'cards' || tab === 'minigames') && (
+        <ComingSoon title={STRINGS.tabs[tab]} bottom={panelBottom} />
+      )}
+
+      <BottomBar active={tab} onChange={setTab} />
+
       {state.offlineReport && (
         <OfflineCard report={state.offlineReport} onClose={dismissOffline} />
       )}

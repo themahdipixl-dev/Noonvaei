@@ -1,13 +1,13 @@
-// Four upgrade cards (one per bakery section) along the bottom of the screen.
+// Four upgrade cards (one per bakery section), shown above the bottom bar on the "upgrade" tab.
 import React from 'react';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
 import { STRINGS } from '../config/strings';
 import { SECTION_KEYS } from '../config/balance';
 import { formatNumber, toFa } from './format';
 
-export default function UpgradePanel({ levels, costs, money, bottleneck, onUpgrade }) {
+export default function UpgradePanel({ levels, costs, money, bottleneck, onUpgrade, bottom = 12 }) {
   return (
-    <View style={styles.wrap} pointerEvents="box-none">
+    <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
       {SECTION_KEYS.map((key) => {
         const meta = STRINGS.sections[key];
         const canAfford = money >= costs[key];
@@ -39,7 +39,7 @@ export default function UpgradePanel({ levels, costs, money, bottleneck, onUpgra
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: 'absolute', bottom: 12, left: 8, right: 8, flexDirection: 'row' },
+  wrap: { position: 'absolute', left: 8, right: 8, flexDirection: 'row' },
   card: {
     flex: 1, marginHorizontal: 3, alignItems: 'center', paddingVertical: 5, paddingHorizontal: 2,
     backgroundColor: '#e8892a', borderRadius: 16, borderWidth: 2, borderColor: '#fff0cc',

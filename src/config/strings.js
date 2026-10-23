@@ -15,6 +15,16 @@ export const STRINGS = {
   next: 'سطح بعدی',
   bottleneck: 'گلوگاه',
   sectionLevel: 'سطح',
+  comingSoon: 'به‌زودی...',
+};
+
+// Bottom tab bar labels.
+STRINGS.tabs = {
+  shop: 'فروشگاه',
+  cards: 'کارت‌ها',
+  home: 'خانه',
+  upgrade: 'ارتقا',
+  minigames: 'مینی‌گیم‌ها',
 };
 
 // The 4 sections of the bakery.

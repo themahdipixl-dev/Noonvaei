@@ -50,7 +50,8 @@ const Btn = ({ label, onPress }) => (
 
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#b9d98f', overflow: 'hidden' },
-  controls: { position: 'absolute', right: 12, bottom: 110 },
+  // kept above the bottom tab bar (~86-104dp tall)
+  controls: { position: 'absolute', right: 12, bottom: 120 },
   btn: {
     width: 44, height: 44, borderRadius: 14, marginTop: 8, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#1f2a44', borderWidth: 2, borderColor: '#4b5a85', borderBottomWidth: 4,
