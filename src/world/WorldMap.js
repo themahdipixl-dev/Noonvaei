@@ -6,7 +6,8 @@ import WorldScene from './WorldScene';
 import { useWorldCamera } from './useWorldCamera';
 import { WORLD, SEASONS, LOT_SIZE, currentSeasonIndex } from './worldConfig';
 
-export default function WorldMap({ level }) {
+// controlsBottom = distance of the zoom buttons from the screen bottom (kept above the tab bar).
+export default function WorldMap({ level, controlsBottom = 120 }) {
   const { grid, tileW, padX, padTop, padBottom } = WORLD;
   const W = grid * tileW + padX * 2;
   const H = (grid * tileW) / 2 + padTop + padBottom;
@@ -33,7 +34,7 @@ export default function WorldMap({ level }) {
         <WorldScene width={W} height={H} unlocked={seasonIdx + 1} />
       </Animated.View>
 
-      <View style={styles.controls} pointerEvents="box-none">
+      <View style={[styles.controls, { bottom: controlsBottom }]} pointerEvents="box-none">
         <Btn label="+" onPress={() => cam.zoomBy(1.3)} />
         <Btn label="−" onPress={() => cam.zoomBy(1 / 1.3)} />
         <Btn label="◎" onPress={cam.recenter} />
@@ -50,8 +51,7 @@ const Btn = ({ label, onPress }) => (
 
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#b9d98f', overflow: 'hidden' },
-  // kept above the bottom tab bar (~86-104dp tall)
-  controls: { position: 'absolute', right: 12, bottom: 120 },
+  controls: { position: 'absolute', right: 12 },
   btn: {
     width: 44, height: 44, borderRadius: 14, marginTop: 8, alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#1f2a44', borderWidth: 2, borderColor: '#4b5a85', borderBottomWidth: 4,

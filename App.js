@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StatusBar, StyleSheet, Platform, AppState } from 'react-native';
 import * as NavigationBar from 'expo-navigation-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useGame } from './src/game/useGame';
 import WorldMap from './src/world/WorldMap';
 import Hud from './src/ui/Hud';
 import UpgradePanel from './src/ui/UpgradePanel';
 import OfflineCard from './src/ui/OfflineCard';
-import BottomBar, { BOTTOM_BAR_HEIGHT } from './src/ui/BottomBar';
+import BottomBar, { useBottomBarHeight } from './src/ui/BottomBar';
 import ComingSoon from './src/ui/ComingSoon';
 import { STRINGS } from './src/config/strings';
 
@@ -16,9 +17,10 @@ const hideSystemNav = () => {
   NavigationBar.setVisibilityAsync('hidden').catch(() => {});
 };
 
-export default function App() {
+function Game() {
   const { state, ready, income, info, level, costs, upgrade, dismissOffline } = useGame();
   const [tab, setTab] = useState('home'); // shop | cards | home | upgrade | minigames
+  const barHeight = useBottomBarHeight(); // bottom bar height incl. bottom safe area
 
   useEffect(() => {
     hideSystemNav();
@@ -52,13 +54,13 @@ export default function App() {
     );
   }
 
-  const panelBottom = BOTTOM_BAR_HEIGHT + 10;
+  const panelBottom = barHeight + 10;
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffeec4" />
       {/* Big pannable / zoomable world (fills the screen, HUD floats above it) */}
-      <WorldMap level={level} />
+      <WorldMap level={level} controlsBottom={barHeight + 12} />
       <View style={styles.hud} pointerEvents="none">
         <Hud money={state.money} income={income} level={level} bottleneck={info.bottleneck} />
       </View>
@@ -83,6 +85,14 @@ export default function App() {
         <OfflineCard report={state.offlineReport} onClose={dismissOffline} />
       )}
     </View>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <Game />
+    </SafeAreaProvider>
   );
 }
 
