@@ -1,9 +1,9 @@
 // Glue between pure game logic, storage and the app lifecycle.
-import { useEffect, useReducer, useRef, useState, useCallback } from 'react';
+import { useEffect, useReducer, useRef, useState, useCallback, useMemo } from 'react';
 import { AppState } from 'react-native';
-import { BALANCE } from '../config/balance';
+import { BALANCE, SECTION_KEYS } from '../config/balance';
 import { reducer, createInitialState } from './state';
-import { incomePerSec, upgradeCost } from './economy';
+import { analyze, upgradeCost, overallLevel } from './economy';
 import { loadGame, saveGame } from './storage';
 
 export function useGame() {
@@ -42,21 +42,28 @@ export function useGame() {
     };
   }, [ready]);
 
-  const upgrade = useCallback(() => {
-    dispatch({ type: 'UPGRADE' });
+  const upgrade = useCallback((section) => {
+    dispatch({ type: 'UPGRADE', section });
     // save right after purchase
     setTimeout(() => saveGame(stateRef.current), 0);
   }, []);
   const dismissOffline = useCallback(() => dispatch({ type: 'DISMISS_OFFLINE' }), []);
 
-  const cost = upgradeCost(state.level);
+  const info = useMemo(() => analyze(state.levels), [state.levels]);
+  const costs = useMemo(() => {
+    const c = {};
+    SECTION_KEYS.forEach((k) => { c[k] = upgradeCost(k, state.levels[k]); });
+    return c;
+  }, [state.levels]);
+
   return {
     state,
     ready,
-    income: incomePerSec(state.level),
-    cost,
-    canAfford: state.money >= cost,
-    upgrade,
+    income: info.income,
+    info,                       // { flows, bottleneck, throughput, price, income }
+    level: overallLevel(state.levels),
+    costs,
+    upgrade,                    // upgrade(sectionKey)
     dismissOffline,
   };
 }

@@ -3,12 +3,12 @@ import { View, Text, StatusBar, StyleSheet, Platform } from 'react-native';
 import { useGame } from './src/game/useGame';
 import WorldMap from './src/world/WorldMap';
 import Hud from './src/ui/Hud';
-import UpgradeButton from './src/ui/UpgradeButton';
+import UpgradePanel from './src/ui/UpgradePanel';
 import OfflineCard from './src/ui/OfflineCard';
 import { STRINGS } from './src/config/strings';
 
 export default function App() {
-  const { state, ready, income, cost, canAfford, upgrade, dismissOffline } = useGame();
+  const { state, ready, income, info, level, costs, upgrade, dismissOffline } = useGame();
 
   if (!ready) {
     return (
@@ -22,11 +22,17 @@ export default function App() {
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffeec4" />
       {/* Big pannable / zoomable world (fills the screen, HUD floats above it) */}
-      <WorldMap level={state.level} />
+      <WorldMap level={level} />
       <View style={styles.hud} pointerEvents="none">
-        <Hud money={state.money} income={income} level={state.level} />
+        <Hud money={state.money} income={income} level={level} bottleneck={info.bottleneck} />
       </View>
-      <UpgradeButton level={state.level} cost={cost} canAfford={canAfford} onPress={upgrade} />
+      <UpgradePanel
+        levels={state.levels}
+        costs={costs}
+        money={state.money}
+        bottleneck={info.bottleneck}
+        onUpgrade={upgrade}
+      />
       {state.offlineReport && (
         <OfflineCard report={state.offlineReport} onClose={dismissOffline} />
       )}

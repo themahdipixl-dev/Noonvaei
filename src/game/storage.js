@@ -12,10 +12,10 @@ export async function loadGame() {
 
 export async function saveGame(state) {
   try {
-    const { money, level, totalEarned, lastSeen } = state;
+    const { money, levels, totalEarned, lastSeen } = state;
     await AsyncStorage.setItem(
       BALANCE.saveKey,
-      JSON.stringify({ v: 1, money, level, totalEarned, lastSeen })
+      JSON.stringify({ v: BALANCE.saveVersion, money, levels, totalEarned, lastSeen })
     );
   } catch (e) {
     // ignore save errors in the first prototype
