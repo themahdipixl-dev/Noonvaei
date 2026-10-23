@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "expo": "~55.0.0",
+    "expo-navigation-bar": "*",
     "react": "*",
     "react-native": "*",
     "react-native-svg": "*",

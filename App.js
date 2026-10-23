@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, StatusBar, StyleSheet, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StatusBar, StyleSheet, Platform, AppState } from 'react-native';
+import * as NavigationBar from 'expo-navigation-bar';
 import { useGame } from './src/game/useGame';
 import WorldMap from './src/world/WorldMap';
 import Hud from './src/ui/Hud';
@@ -9,9 +10,39 @@ import BottomBar, { BOTTOM_BAR_HEIGHT } from './src/ui/BottomBar';
 import ComingSoon from './src/ui/ComingSoon';
 import { STRINGS } from './src/config/strings';
 
+// Hide the phone's own navigation buttons / gesture line while the game is open.
+const hideSystemNav = () => {
+  if (Platform.OS !== 'android') return;
+  NavigationBar.setVisibilityAsync('hidden').catch(() => {});
+};
+
 export default function App() {
   const { state, ready, income, info, level, costs, upgrade, dismissOffline } = useGame();
   const [tab, setTab] = useState('home'); // shop | cards | home | upgrade | minigames
+
+  useEffect(() => {
+    hideSystemNav();
+    // Re-hide when coming back to the app (e.g. after the recents screen).
+    const appSub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') hideSystemNav();
+    });
+    // If the user swipes the bar into view, hide it again shortly after.
+    let timer;
+    let visSub;
+    try {
+      visSub = NavigationBar.addVisibilityListener(({ visibility }) => {
+        if (visibility === 'visible') {
+          clearTimeout(timer);
+          timer = setTimeout(hideSystemNav, 2000);
+        }
+      });
+    } catch (e) {}
+    return () => {
+      clearTimeout(timer);
+      appSub.remove();
+      if (visSub) visSub.remove();
+    };
+  }, []);
 
   if (!ready) {
     return (
