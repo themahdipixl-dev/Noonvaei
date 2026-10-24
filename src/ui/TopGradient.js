@@ -5,7 +5,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
-const HEIGHT = 44;
+const HEIGHT = 22; // very short
 
 export default function TopGradient({ height = HEIGHT }) {
   return (
@@ -16,7 +16,8 @@ export default function TopGradient({ height = HEIGHT }) {
       <Svg width="100%" height="100%">
         <Defs>
           <LinearGradient id="topFade" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor="#000000" stopOpacity="0.65" />
+            <Stop offset="0" stopColor="#000000" stopOpacity="1" />
+            <Stop offset="0.45" stopColor="#000000" stopOpacity="0.85" />
             <Stop offset="1" stopColor="#000000" stopOpacity="0" />
           </LinearGradient>
         </Defs>

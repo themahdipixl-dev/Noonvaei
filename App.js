@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StatusBar, StyleSheet, Platform, AppState } from 'react-native';
 import * as NavigationBar from 'expo-navigation-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useGame } from './src/game/useGame';
 import WorldMap from './src/world/WorldMap';
 import Hud from './src/ui/Hud';
@@ -12,9 +12,16 @@ import BottomBar, { useBottomBarHeight } from './src/ui/BottomBar';
 import ComingSoon from './src/ui/ComingSoon';
 import { STRINGS } from './src/config/strings';
 
-// Hide the phone's own navigation buttons / gesture line while the game is open.
+// Hide the phone's own system bars (top status bar + bottom navigation buttons / gesture line)
+// while the game is open.
 const hideSystemNav = () => {
   if (Platform.OS !== 'android') return;
+  try {
+    StatusBar.setTranslucent(true);
+    StatusBar.setHidden(true, 'none');
+  } catch {
+    // ignore: <StatusBar hidden /> below still asks for the same thing
+  }
   NavigationBar.setVisibilityAsync('hidden').catch(() => {});
 };
 
@@ -22,6 +29,7 @@ function Game() {
   const { state, ready, income, info, level, costs, upgrade, dismissOffline } = useGame();
   const [tab, setTab] = useState('home'); // shop | cards | home | upgrade | minigames
   const barHeight = useBottomBarHeight(); // bottom bar height incl. bottom safe area
+  const insets = useSafeAreaInsets(); // top inset = camera / notch area the HUD must stay below
 
   useEffect(() => {
     hideSystemNav();
@@ -29,7 +37,7 @@ function Game() {
     const appSub = AppState.addEventListener('change', (s) => {
       if (s === 'active') hideSystemNav();
     });
-    // If the user swipes the bar into view, hide it again shortly after.
+    // If the user swipes a bar into view, hide it again shortly after.
     let timer;
     let visSub;
     try {
@@ -42,7 +50,10 @@ function Game() {
     } catch {
       // Visibility listener isn't available on this platform/device: safe to ignore.
     }
+    // The top status bar can pop back (e.g. after a swipe-down): re-hide it every few seconds.
+    const keepHidden = setInterval(hideSystemNav, 3000);
     return () => {
+      clearInterval(keepHidden);
       clearTimeout(timer);
       appSub.remove();
       if (visSub) visSub.remove();
@@ -52,7 +63,7 @@ function Game() {
   if (!ready) {
     return (
       <View style={[styles.root, styles.center]}>
-        <StatusBar hidden />
+        <StatusBar hidden translucent />
         <Text style={styles.loading}>{STRINGS.loading}</Text>
       </View>
     );
@@ -63,12 +74,12 @@ function Game() {
   return (
     <View style={styles.root}>
       {/* Phone's top status bar is hidden; a short black -> transparent gradient replaces it. */}
-      <StatusBar hidden />
+      <StatusBar hidden translucent />
       {/* Big pannable world (fills the screen, HUD floats above it) */}
       <WorldMap level={level} />
       <TopGradient />
       {/* box-none: HUD buttons are tappable, empty areas still pass touches to the map */}
-      <View style={styles.hud} pointerEvents="box-none">
+      <View style={[styles.hud, { top: insets.top }]} pointerEvents="box-none">
         <Hud money={state.money} income={income} level={level} />
       </View>
 
@@ -104,7 +115,8 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  // No top padding any more: the status bar is hidden, so the game uses the full screen height.
+  // No top padding: the status bar is hidden. The HUD itself is pushed below the camera area
+  // with the safe-area top inset (see <View style={styles.hud}> above).
   root: {
     flex: 1,
     backgroundColor: '#b9d98f',
