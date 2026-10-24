@@ -38,7 +38,9 @@ function Game() {
           timer = setTimeout(hideSystemNav, 2000);
         }
       });
-    } catch (e) {}
+    } catch {
+      // Visibility listener isn't available on this platform/device: safe to ignore.
+    }
     return () => {
       clearTimeout(timer);
       appSub.remove();

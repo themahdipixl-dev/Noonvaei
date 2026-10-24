@@ -1,3 +1,7 @@
+// PNG icons hosted in the Assets repo (themahdipixl-dev/Assets).
+import React from 'react';
+import { Image } from 'react-native';
+
 const BASE =
   'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/';
 const f = (name) => ({ uri: BASE + name });
@@ -18,3 +22,25 @@ export const ICONS = {
   plus: f('white_plus_sign_in_a_green_circle.png'),
   star: f('yellow-twelve-pointed-star.png'),
 };
+
+// Bottom bar tab key -> PNG icon.
+const TAB_ICON_SOURCES = {
+  shop: ICONS.cart,
+  cards: ICONS.cards,
+  home: ICONS.house,
+  upgrade: ICONS.levelUp,
+  minigames: ICONS.joystick,
+};
+
+export function TabIcon({ name, size = 40 }) {
+  const source = TAB_ICON_SOURCES[name];
+  if (!source) return null;
+  return (
+    <Image
+      source={source}
+      style={{ width: size, height: size }}
+      resizeMode="contain"
+      fadeDuration={0}
+    />
+  );
+}

@@ -5,7 +5,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STRINGS } from '../config/strings';
-import { TabIcon } from './TabIcons';
+import { TabIcon } from './Icons';
 import { COLORS } from './theme';
 
 // Visual order, left -> right (kept fixed regardless of text direction).
