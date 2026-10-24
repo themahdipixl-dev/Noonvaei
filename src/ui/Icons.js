@@ -32,6 +32,20 @@ const TAB_ICON_SOURCES = {
   minigames: ICONS.joystick,
 };
 
+// Generic icon by ICONS key (used by the top HUD).
+export function Icon({ name, size = 28, style }) {
+  const source = ICONS[name];
+  if (!source) return null;
+  return (
+    <Image
+      source={source}
+      style={[{ width: size, height: size }, style]}
+      resizeMode="contain"
+      fadeDuration={0}
+    />
+  );
+}
+
 export function TabIcon({ name, size = 40 }) {
   const source = TAB_ICON_SOURCES[name];
   if (!source) return null;

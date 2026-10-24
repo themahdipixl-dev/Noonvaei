@@ -1,13 +1,13 @@
 // Full-screen pannable / zoomable world. Drop-in replacement for <Scene/>.
+// (Zoom / recenter buttons were removed: zoom is done by pinch gesture only.)
 import React, { useMemo } from 'react';
-import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
+import { View, Animated, StyleSheet } from 'react-native';
 import { makeProjector } from '../scene/iso';
 import WorldScene from './WorldScene';
 import { useWorldCamera } from './useWorldCamera';
 import { WORLD, SEASONS, LOT_SIZE, currentSeasonIndex } from './worldConfig';
 
-// controlsBottom = distance of the zoom buttons from the screen bottom (kept above the tab bar).
-export default function WorldMap({ level, controlsBottom = 120 }) {
+export default function WorldMap({ level }) {
   const { grid, tileW, padX, padTop, padBottom } = WORLD;
   const W = grid * tileW + padX * 2;
   const H = (grid * tileW) / 2 + padTop + padBottom;
@@ -33,28 +33,10 @@ export default function WorldMap({ level, controlsBottom = 120 }) {
       >
         <WorldScene width={W} height={H} unlocked={seasonIdx + 1} />
       </Animated.View>
-
-      <View style={[styles.controls, { bottom: controlsBottom }]} pointerEvents="box-none">
-        <Btn label="+" onPress={() => cam.zoomBy(1.3)} />
-        <Btn label="−" onPress={() => cam.zoomBy(1 / 1.3)} />
-        <Btn label="◎" onPress={cam.recenter} />
-      </View>
     </View>
   );
 }
 
-const Btn = ({ label, onPress }) => (
-  <Pressable onPress={onPress} style={styles.btn}>
-    <Text style={styles.btnText}>{label}</Text>
-  </Pressable>
-);
-
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#b9d98f', overflow: 'hidden' },
-  controls: { position: 'absolute', right: 12 },
-  btn: {
-    width: 44, height: 44, borderRadius: 14, marginTop: 8, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#1f2a44', borderWidth: 2, borderColor: '#4b5a85', borderBottomWidth: 4,
-  },
-  btnText: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
 });

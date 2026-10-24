@@ -61,10 +61,11 @@ function Game() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle="dark-content" backgroundColor="#ffeec4" />
-      {/* Big pannable / zoomable world (fills the screen, HUD floats above it) */}
-      <WorldMap level={level} controlsBottom={barHeight + 12} />
-      <View style={styles.hud} pointerEvents="none">
-        <Hud money={state.money} income={income} level={level} bottleneck={info.bottleneck} />
+      {/* Big pannable world (fills the screen, HUD floats above it) */}
+      <WorldMap level={level} />
+      {/* box-none: HUD buttons are tappable, empty areas still pass touches to the map */}
+      <View style={styles.hud} pointerEvents="box-none">
+        <Hud money={state.money} income={income} level={level} />
       </View>
 
       {tab === 'upgrade' && (

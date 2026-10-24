@@ -2,6 +2,7 @@ export const STRINGS = {
   loading: 'در حال بارگذاری...',
   money: 'موجودی',
   perSec: 'درآمد در ثانیه',
+  perSecShort: 'در ثانیه',
   level: 'سطح نانوایی',
   upgrade: 'ارتقا',
   cost: 'هزینه',
@@ -16,6 +17,9 @@ export const STRINGS = {
   bottleneck: 'گلوگاه',
   sectionLevel: 'سطح',
   comingSoon: 'به‌زودی...',
+  dailyMission: 'ماموریت روزانه',
+  seasonPass: 'پس فصل',
+  cities: 'شهرها',
 };
 
 // Bottom tab bar labels.

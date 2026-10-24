@@ -15,6 +15,12 @@ export function formatNumber(n) {
   return toFa(Math.floor(n));
 }
 
+// Full number with thousands separators (۱۲۴,۵۰۰). Falls back to the short form for huge values.
+export function formatGrouped(n) {
+  if (n >= 1e9) return formatNumber(n);
+  return toFa(String(Math.floor(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','));
+}
+
 export function formatRate(n) {
   return n < 100 ? toFa(n.toFixed(1).replace('.', '٫')) : formatNumber(n);
 }
