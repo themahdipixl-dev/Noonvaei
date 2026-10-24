@@ -12,7 +12,7 @@ import { formatGrouped, formatRate, toFa } from './format';
 import { Icon } from './Icons';
 
 const DESIGN_W = 780;
-const DESIGN_H = 362;
+const DESIGN_H = 352;
 const MAX_SCALE = 0.7;
 const SW = 3; // stroke width (design px) - lower it to get thinner outlines
 const LIP = 8; // height of the 3D lip under the face (design px)
@@ -177,26 +177,26 @@ export default function Hud({
       </Btn>
 
       {/* Season pass (right) */}
-      <Btn s={s} x={500} y={114} w={265} h={92} r={20} color={RED} lipColor={RED_LIP} onPress={onSeasonPass}>
+      <Btn s={s} x={500} y={104} w={265} h={92} r={20} color={RED} lipColor={RED_LIP} onPress={onSeasonPass}>
         <Icon name="crown" size={70 * s} style={abs(s, 15, 10, 70)} />
         <T s={s} left={80} top={10} w={135} h={44} size={24} align="right">{STRINGS.seasonPass}</T>
         <Bar s={s} left={92} top={56} w={150} h={26} value={PLACEHOLDER.seasonProgress} />
       </Btn>
 
       {/* Settings (under the season pass, right-aligned with it) */}
-      <Btn s={s} x={695} y={230} w={70} h={70} color={BLUE} lipColor={BLUE_LIP} onPress={onSettings}>
+      <Btn s={s} x={695} y={220} w={70} h={70} color={BLUE} lipColor={BLUE_LIP} onPress={onSettings}>
         <Icon name="gear" size={55 * s} style={abs(s, 7, 8, 55)} />
       </Btn>
 
       {/* Daily mission (left) */}
-      <Btn s={s} x={20} y={114} w={265} h={92} r={20} color={BLUE} lipColor={BLUE_LIP} onPress={onMission}>
+      <Btn s={s} x={20} y={104} w={265} h={92} r={20} color={BLUE} lipColor={BLUE_LIP} onPress={onMission}>
         <Icon name="clipboard" size={70 * s} style={abs(s, 15, 13, 70)} />
         <T s={s} left={82} top={10} w={155} h={44} size={24} align="right">{STRINGS.dailyMission}</T>
         <Bar s={s} left={92} top={56} w={150} h={26} value={PLACEHOLDER.missionProgress} />
       </Btn>
 
       {/* Cities */}
-      <Btn s={s} x={20} y={230} w={120} h={114} r={20} color={GREEN} lipColor={GREEN_LIP} onPress={onCities}>
+      <Btn s={s} x={20} y={220} w={120} h={114} r={20} color={GREEN} lipColor={GREEN_LIP} onPress={onCities}>
         <Icon name="buildings" size={90 * s} style={abs(s, 20, 8, 90)} />
         <T s={s} left={0} top={77} w={120} h={30} size={23}>{STRINGS.cities}</T>
       </Btn>
