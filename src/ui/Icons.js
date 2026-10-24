@@ -1,5 +1,5 @@
 const BASE =
-  'https://raw.githubusercontent.com/themahdipixl-dev/Noonvaei/main/assets/';
+  'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/';
 const f = (name) => ({ uri: BASE + name });
 
 export const ICONS = {
