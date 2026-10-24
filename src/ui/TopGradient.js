@@ -5,7 +5,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 
-const HEIGHT = 22; // very short
+const HEIGHT = 42; // short
 
 export default function TopGradient({ height = HEIGHT }) {
   return (
