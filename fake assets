@@ -1,0 +1,19 @@
+{ 
+ {
+//This folder is named "fake assets." It’s labeled this way because importing a project from GitHub into Expo Snack causes errors if image files are included in the GitHub repository. Therefore, only the filenames are listed here so they can be referenced in the code; the actual image files are already present within Expo Snack.
+ }
+arcade_joystick.png
+blue_shopping_cart.png
+clear_white_diamond_with_a_classic_pointed_cut.png
+clipboard_with_blank_check_boxes.png
+color-three-buildings.png
+four_point_sparkle.png
+gold_crown_with_three_gems.png
+green_level_up_arrow_with_sparkles.png
+grey_gear_cog.png
+simple_blue_house_icon.png
+stack_of_green_banknotes.png
+three-cards-with-crown-on-it.png
+white_plus_sign_in_a_green_circle.png
+yellow-twelve-pointed-star.png
+} 
