@@ -124,11 +124,11 @@ const PlusBtn = ({ s, left, onPress }) => (
     onPress={onPress}
     hitSlop={8 * s}
     style={({ pressed }) => [
-      { position: 'absolute', left: left * s, top: 15 * s },
+      { position: 'absolute', left: left * s, top: 8 * s },
       pressed && { transform: [{ scale: 0.9 }] },
     ]}
   >
-    <Icon name="plus" size={40 * s} />
+    <Icon name="plus" size={55 * s} />
   </Pressable>
 );
 
@@ -173,46 +173,46 @@ export default function Hud({
 
       {/* Settings */}
       <Btn s={s} x={695} y={28} w={70} h={70} color={BLUE} lipColor={BLUE_LIP} onPress={onSettings}>
-        <Icon name="gear" size={42 * s} style={abs(s, 14, 14, 42)} />
+        <Icon name="gear" size={55 * s} style={abs(s, 7, 8, 55)} />
       </Btn>
 
       {/* Gems */}
       <Btn s={s} x={510} y={28} w={172} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
-        <Icon name="diamond" size={36 * s} style={abs(s, 18, 17, 36)} />
+        <Icon name="diamond" size={55 * s} style={abs(s, 7, 8, 55)} />
         <T s={s} left={42} top={12} w={100} h={40} size={27} adjustsFontSizeToFit>{toFa(gems)}</T>
         <PlusBtn s={s} left={121} onPress={onAddGems} />
       </Btn>
 
       {/* Money */}
       <Btn s={s} x={290} y={28} w={208} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
-        <Icon name="money" size={44 * s} style={abs(s, 14, 13, 44)} />
+        <Icon name="money" size={55 * s} style={abs(s, 7, 8, 55)} />
         <T s={s} left={42} top={12} w={130} h={40} size={27} adjustsFontSizeToFit>{formatGrouped(money)}</T>
         <PlusBtn s={s} left={156} onPress={onAddMoney} />
       </Btn>
 
       {/* Season pass (right) */}
       <Btn s={s} x={490} y={152} w={275} h={92} r={20} color={RED} lipColor={RED_LIP} onPress={onSeasonPass}>
-        <Icon name="crown" size={48 * s} style={abs(s, 26, 20, 48)} />
+        <Icon name="crown" size={70 * s} style={abs(s, 15, 10, 70)} />
         <T s={s} left={80} top={12} w={135} h={44} size={24} align="right">{STRINGS.seasonPass}</T>
         <Bar s={s} left={87} top={60} w={171} value={PLACEHOLDER.seasonProgress} />
       </Btn>
 
       {/* Daily mission (left) */}
       <Btn s={s} x={20} y={152} w={275} h={92} r={20} color={BLUE} lipColor={BLUE_LIP} onPress={onMission}>
-        <Icon name="clipboard" size={50 * s} style={abs(s, 24, 21, 50)} />
+        <Icon name="clipboard" size={70 * s} style={abs(s, 15, 13, 70)} />
         <T s={s} left={82} top={12} w={155} h={44} size={24} align="right">{STRINGS.dailyMission}</T>
         <Bar s={s} left={87} top={60} w={171} value={PLACEHOLDER.missionProgress} />
       </Btn>
 
       {/* Cities */}
       <Btn s={s} x={20} y={268} w={120} h={114} r={20} color={GREEN} lipColor={GREEN_LIP} onPress={onCities}>
-        <Icon name="buildings" size={62 * s} style={abs(s, 29, 12, 62)} />
+        <Icon name="buildings" size={90 * s} style={abs(s, 20, 8, 90)} />
         <T s={s} left={0} top={77} w={120} h={30} size={23}>{STRINGS.cities}</T>
       </Btn>
 
       {/* Level star badge, on top of everything */}
-      <View pointerEvents="none" style={abs(s, 16, 20, 88)}>
-        <Icon name="star" size={88 * s} />
+      <View pointerEvents="none" style={abs(s, 16, 20, 100)}>
+        <Icon name="star" size={100 * s} />
         <Text
           style={{
             position: 'absolute', left: 0, top: 0, width: 88 * s, height: 88 * s, lineHeight: 88 * s,
