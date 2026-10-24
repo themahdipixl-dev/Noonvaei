@@ -1,5 +1,5 @@
-// Top HUD (cartoon style): level badge + segmented bar, money, gems, settings,
-// rate tab under money, daily mission, season pass and the "cities" button.
+// Top HUD (cartoon style): level badge + flat progress bar, money, gems, rate tab under money,
+// daily mission, season pass, settings (under season pass) and the "cities" button.
 //
 // Layout is placed with absolute coordinates taken from the design (780px wide) and scaled to the
 // screen width, so proportions always match the design.
@@ -12,7 +12,7 @@ import { formatGrouped, formatRate, toFa } from './format';
 import { Icon } from './Icons';
 
 const DESIGN_W = 780;
-const DESIGN_H = 400;
+const DESIGN_H = 385;
 const MAX_SCALE = 0.7;
 const SW = 3; // stroke width (design px) - lower it to get thinner outlines
 const LIP = 8; // height of the 3D lip under the face (design px)
@@ -29,11 +29,10 @@ const GREEN_LIP = '#1F7A3A';
 const MINT = '#7DFF9A';
 const TRACK = '#16215A';
 const FILL = '#5EE27A';
-const SEG_OFF = '#34457F';
-const SEG_OFF_EDGE = '#1A2660';
-const SEG_ON = '#50D36F';
-const SEG_ON_EDGE = '#23863E';
-const SEGMENTS = 5;
+
+// The level bar looks like one smooth bar, but internally it is made of 10 hidden steps:
+// each level inside the current "page" of 10 levels fills one tenth of the bar.
+const LEVEL_STEPS = 10;
 
 // TODO: replace with real values once gems / missions / season pass exist in game state.
 const PLACEHOLDER = { gems: 350, missionProgress: 0.4, seasonProgress: 0.25 };
@@ -106,11 +105,11 @@ const T = ({ s, left, top, w, h, size, align = 'center', color = '#fff', childre
 );
 
 // Progress bar: fills from the left, like the design.
-const Bar = ({ s, left, top, w, value }) => (
+const Bar = ({ s, left, top, w, h = 24, value }) => (
   <View
     style={{
-      position: 'absolute', left: left * s, top: top * s, width: w * s, height: 14 * s,
-      borderRadius: 8 * s, backgroundColor: TRACK, borderWidth: SW * s, borderColor: INK,
+      position: 'absolute', left: left * s, top: top * s, width: w * s, height: h * s,
+      borderRadius: (h / 2) * s, backgroundColor: TRACK, borderWidth: SW * s, borderColor: INK,
       overflow: 'hidden',
     }}
   >
@@ -140,78 +139,68 @@ export default function Hud({
 }) {
   const { width } = useWindowDimensions();
   const s = Math.min(width / DESIGN_W, MAX_SCALE);
-  const filled = ((Math.max(1, level) - 1) % SEGMENTS) + 1;
+  // Everything (levels, upgrades...) still works on the real level; only the visual bar is stepped.
+  const filledSteps = ((Math.max(1, level) - 1) % LEVEL_STEPS) + 1;
+  const levelProgress = filledSteps / LEVEL_STEPS;
 
   return (
     <View
       pointerEvents="box-none"
       style={{ width: DESIGN_W * s, height: DESIGN_H * s, alignSelf: 'center' }}
     >
-      {/* Rate tab (sits behind the money pill) */}
-      <Btn s={s} x={315} y={88} w={158} h={62} r={18} color={NAVY} lipColor={NAVY_LIP} lip={6} glow={0}>
+      {/* Rate tab (sits behind the money pill, left-aligned with it) */}
+      <Btn s={s} x={300} y={70} w={158} h={62} r={18} color={NAVY} lipColor={NAVY_LIP} lip={6} glow={0}>
         <T s={s} left={0} top={12} w={158} h={40} size={23} color={MINT}>
           {formatRate(income)} {STRINGS.perSecShort}
         </T>
       </Btn>
 
-      {/* Level: segmented bar (star badge is drawn on top at the end) */}
-      <Btn s={s} x={45} y={28} w={233} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
-        {Array.from({ length: SEGMENTS }).map((_, i) => {
-          const on = i < filled;
-          return (
-            <View
-              key={i}
-              style={{
-                position: 'absolute', left: (67 + i * 31) * s, top: 19 * s, width: 26 * s, height: 32 * s,
-                borderRadius: 6 * s, borderWidth: 2 * s,
-                backgroundColor: on ? SEG_ON : SEG_OFF, borderColor: on ? SEG_ON_EDGE : SEG_OFF_EDGE,
-              }}
-            />
-          );
-        })}
+      {/* Level: flat bar, rectangle on the left (star badge is drawn on top at the end) */}
+      <Btn s={s} x={36} y={10} w={200} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
+        <Bar s={s} left={76} top={24} w={112} h={22} value={levelProgress} />
       </Btn>
 
-      {/* Settings */}
-      <Btn s={s} x={695} y={28} w={70} h={70} color={BLUE} lipColor={BLUE_LIP} onPress={onSettings}>
-        <Icon name="gear" size={55 * s} style={abs(s, 7, 8, 55)} />
-      </Btn>
-
-      {/* Gems */}
-      <Btn s={s} x={510} y={28} w={172} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
-        <Icon name="diamond" size={55 * s} style={abs(s, 7, 8, 55)} />
-        <T s={s} left={42} top={12} w={100} h={40} size={27} adjustsFontSizeToFit>{toFa(gems)}</T>
-        <PlusBtn s={s} left={121} onPress={onAddGems} />
-      </Btn>
-
-      {/* Money */}
-      <Btn s={s} x={290} y={28} w={208} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
+      {/* Money (longer, shifted right) */}
+      <Btn s={s} x={300} y={10} w={236} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
         <Icon name="money" size={55 * s} style={abs(s, 7, 8, 55)} />
-        <T s={s} left={42} top={12} w={130} h={40} size={27} adjustsFontSizeToFit>{formatGrouped(money)}</T>
-        <PlusBtn s={s} left={156} onPress={onAddMoney} />
+        <T s={s} left={42} top={12} w={135} h={40} size={27} adjustsFontSizeToFit>{formatGrouped(money)}</T>
+        <PlusBtn s={s} left={184} onPress={onAddMoney} />
+      </Btn>
+
+      {/* Gems (longer, at the right edge) */}
+      <Btn s={s} x={552} y={10} w={213} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
+        <Icon name="diamond" size={55 * s} style={abs(s, 7, 8, 55)} />
+        <T s={s} left={42} top={12} w={112} h={40} size={27} adjustsFontSizeToFit>{toFa(gems)}</T>
+        <PlusBtn s={s} left={161} onPress={onAddGems} />
       </Btn>
 
       {/* Season pass (right) */}
-      <Btn s={s} x={490} y={152} w={275} h={92} r={20} color={RED} lipColor={RED_LIP} onPress={onSeasonPass}>
+      <Btn s={s} x={500} y={134} w={265} h={92} r={20} color={RED} lipColor={RED_LIP} onPress={onSeasonPass}>
         <Icon name="crown" size={70 * s} style={abs(s, 15, 10, 70)} />
-        <T s={s} left={80} top={12} w={135} h={44} size={24} align="right">{STRINGS.seasonPass}</T>
-        <Bar s={s} left={87} top={60} w={171} value={PLACEHOLDER.seasonProgress} />
+        <T s={s} left={80} top={10} w={135} h={44} size={24} align="right">{STRINGS.seasonPass}</T>
+        <Bar s={s} left={92} top={56} w={150} h={26} value={PLACEHOLDER.seasonProgress} />
+      </Btn>
+
+      {/* Settings (under the season pass, right-aligned with it) */}
+      <Btn s={s} x={695} y={254} w={70} h={70} color={BLUE} lipColor={BLUE_LIP} onPress={onSettings}>
+        <Icon name="gear" size={55 * s} style={abs(s, 7, 8, 55)} />
       </Btn>
 
       {/* Daily mission (left) */}
-      <Btn s={s} x={20} y={152} w={275} h={92} r={20} color={BLUE} lipColor={BLUE_LIP} onPress={onMission}>
+      <Btn s={s} x={20} y={134} w={265} h={92} r={20} color={BLUE} lipColor={BLUE_LIP} onPress={onMission}>
         <Icon name="clipboard" size={70 * s} style={abs(s, 15, 13, 70)} />
-        <T s={s} left={82} top={12} w={155} h={44} size={24} align="right">{STRINGS.dailyMission}</T>
-        <Bar s={s} left={87} top={60} w={171} value={PLACEHOLDER.missionProgress} />
+        <T s={s} left={82} top={10} w={155} h={44} size={24} align="right">{STRINGS.dailyMission}</T>
+        <Bar s={s} left={92} top={56} w={150} h={26} value={PLACEHOLDER.missionProgress} />
       </Btn>
 
       {/* Cities */}
-      <Btn s={s} x={20} y={268} w={120} h={114} r={20} color={GREEN} lipColor={GREEN_LIP} onPress={onCities}>
+      <Btn s={s} x={20} y={250} w={120} h={114} r={20} color={GREEN} lipColor={GREEN_LIP} onPress={onCities}>
         <Icon name="buildings" size={90 * s} style={abs(s, 20, 8, 90)} />
         <T s={s} left={0} top={77} w={120} h={30} size={23}>{STRINGS.cities}</T>
       </Btn>
 
-      {/* Level star badge, on top of everything */}
-      <View pointerEvents="none" style={abs(s, 16, 20, 100)}>
+      {/* Level star badge, on top of the level rectangle */}
+      <View pointerEvents="none" style={abs(s, 4, 2, 100)}>
         <Icon name="star" size={100 * s} />
         <Text
           style={{

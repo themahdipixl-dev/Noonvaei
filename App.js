@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useGame } from './src/game/useGame';
 import WorldMap from './src/world/WorldMap';
 import Hud from './src/ui/Hud';
+import TopGradient from './src/ui/TopGradient';
 import UpgradePanel from './src/ui/UpgradePanel';
 import OfflineCard from './src/ui/OfflineCard';
 import BottomBar, { useBottomBarHeight } from './src/ui/BottomBar';
@@ -51,6 +52,7 @@ function Game() {
   if (!ready) {
     return (
       <View style={[styles.root, styles.center]}>
+        <StatusBar hidden />
         <Text style={styles.loading}>{STRINGS.loading}</Text>
       </View>
     );
@@ -60,9 +62,11 @@ function Game() {
 
   return (
     <View style={styles.root}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffeec4" />
+      {/* Phone's top status bar is hidden; a short black -> transparent gradient replaces it. */}
+      <StatusBar hidden />
       {/* Big pannable world (fills the screen, HUD floats above it) */}
       <WorldMap level={level} />
+      <TopGradient />
       {/* box-none: HUD buttons are tappable, empty areas still pass touches to the map */}
       <View style={styles.hud} pointerEvents="box-none">
         <Hud money={state.money} income={income} level={level} />
@@ -100,12 +104,12 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  // No top padding any more: the status bar is hidden, so the game uses the full screen height.
   root: {
     flex: 1,
     backgroundColor: '#b9d98f',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0,
   },
-  hud: { position: 'absolute', top: Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0, left: 0, right: 0 },
+  hud: { position: 'absolute', top: 0, left: 0, right: 0 },
   center: { alignItems: 'center', justifyContent: 'center' },
   loading: { fontSize: 18, color: '#6b3f1d' },
 });
