@@ -1,178 +1,228 @@
 // Top HUD (cartoon style): level badge + segmented bar, money, gems, settings,
 // rate tab under money, daily mission, season pass and the "cities" button.
-// All rows are forced LTR so the layout matches the design regardless of text direction.
+//
+// Layout is placed with absolute coordinates taken from the design (780px wide) and scaled to the
+// screen width, so proportions always match the design.
+// Every button is: one outer stroke around [face + bottom lip]. The face has no stroke of its own,
+// and the lip has exactly the same width as the face.
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { STRINGS } from '../config/strings';
 import { formatGrouped, formatRate, toFa } from './format';
 import { Icon } from './Icons';
 
-const NAVY = '#1B2A5C';
-const NAVY_DARK = '#0F1A3F';
-const BLUE = '#4067E8';
-const BLUE_DARK = '#2646AE';
-const RED = '#EF5D47';
-const RED_DARK = '#B93A28';
-const GREEN = '#3DBE5F';
-const GREEN_DARK = '#228A40';
-const GREEN_TEXT = '#8CF29A';
+const DESIGN_W = 780;
+const DESIGN_H = 400;
+const MAX_SCALE = 0.7;
+const SW = 3; // stroke width (design px) - lower it to get thinner outlines
+const LIP = 8; // height of the 3D lip under the face (design px)
+
+const INK = '#0E1740';
+const NAVY = '#1F2E6C';
+const NAVY_LIP = '#101A46';
+const BLUE = '#4E76E7';
+const BLUE_LIP = '#2A439B';
+const RED = '#EF7358';
+const RED_LIP = '#B7402E';
+const GREEN = '#40BF65';
+const GREEN_LIP = '#1F7A3A';
+const MINT = '#7DFF9A';
+const TRACK = '#16215A';
+const FILL = '#5EE27A';
+const SEG_OFF = '#34457F';
+const SEG_OFF_EDGE = '#1A2660';
+const SEG_ON = '#50D36F';
+const SEG_ON_EDGE = '#23863E';
 const SEGMENTS = 5;
 
 // TODO: replace with real values once gems / missions / season pass exist in game state.
-const PLACEHOLDER = { gems: 350, missionProgress: 0.35, seasonProgress: 0.2 };
+const PLACEHOLDER = { gems: 350, missionProgress: 0.4, seasonProgress: 0.25 };
 
-const Press = ({ onPress, style, children }) => (
-  <Pressable onPress={onPress} style={({ pressed }) => [style, pressed && styles.pressed]}>
+// Button = outer container (stroke + lip colour) -> face. x/y/w/h describe the FACE in design px.
+const Btn = ({
+  s, x, y, w, h, r = 18, color, lipColor, lip = LIP, glow = 0.35, onPress, children,
+}) => {
+  const outer = {
+    position: 'absolute',
+    left: (x - SW) * s,
+    top: (y - SW) * s,
+    width: (w + SW * 2) * s,
+    height: (h + lip + SW * 2) * s,
+    borderWidth: SW * s,
+    borderColor: INK,
+    borderRadius: (r + SW) * s,
+    backgroundColor: lipColor,
+    overflow: 'hidden',
+  };
+  const face = (
+    <View style={{ width: w * s, height: h * s, borderRadius: r * s, backgroundColor: color }}>
+      <View
+        pointerEvents="none"
+        style={{
+          position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+          borderRadius: r * s, borderWidth: 0, borderTopWidth: 3 * s,
+          borderColor: 'transparent', borderTopColor: `rgba(255,255,255,${glow})`,
+        }}
+      />
+      {children}
+    </View>
+  );
+  if (!onPress) return <View style={outer}>{face}</View>;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [outer, pressed && { transform: [{ translateY: 5 * s }] }]}
+    >
+      {face}
+    </Pressable>
+  );
+};
+
+const T = ({ s, left, top, w, h, size, align = 'center', color = '#fff', children, ...rest }) => (
+  <Text
+    numberOfLines={1}
+    {...rest}
+    style={{
+      position: 'absolute',
+      left: left * s,
+      top: top * s,
+      width: w * s,
+      height: h * s,
+      lineHeight: h * s,
+      fontSize: size * s,
+      fontWeight: '900',
+      color,
+      textAlign: align,
+      textAlignVertical: 'center',
+      includeFontPadding: false,
+      writingDirection: align === 'right' ? 'rtl' : 'ltr',
+      textShadowColor: 'rgba(10,20,60,0.35)',
+      textShadowOffset: { width: 0, height: 3 * s },
+      textShadowRadius: 0,
+    }}
+  >
     {children}
+  </Text>
+);
+
+// Progress bar: fills from the left, like the design.
+const Bar = ({ s, left, top, w, value }) => (
+  <View
+    style={{
+      position: 'absolute', left: left * s, top: top * s, width: w * s, height: 14 * s,
+      borderRadius: 8 * s, backgroundColor: TRACK, borderWidth: SW * s, borderColor: INK,
+      overflow: 'hidden',
+    }}
+  >
+    <View style={{ width: `${Math.round(Math.min(1, Math.max(0, value)) * 100)}%`, height: '100%', backgroundColor: FILL }} />
+  </View>
+);
+
+// The "+" icon inside a currency pill.
+const PlusBtn = ({ s, left, onPress }) => (
+  <Pressable
+    onPress={onPress}
+    hitSlop={8 * s}
+    style={({ pressed }) => [
+      { position: 'absolute', left: left * s, top: 15 * s },
+      pressed && { transform: [{ scale: 0.9 }] },
+    ]}
+  >
+    <Icon name="plus" size={40 * s} />
   </Pressable>
 );
 
-const Bar = ({ value }) => (
-  <View style={styles.track}>
-    <View style={[styles.fill, { width: `${Math.round(value * 100)}%` }]} />
-  </View>
-);
-
-// Currency pill: [icon]  amount  [+]
-const CurrencyPill = ({ icon, text, onPlus, style }) => (
-  <View style={[styles.panel, styles.currency, style]}>
-    <Icon name={icon} size={30} />
-    <Text style={styles.currencyText} numberOfLines={1} adjustsFontSizeToFit>{text}</Text>
-    <Press onPress={onPlus}>
-      <Icon name="plus" size={28} />
-    </Press>
-  </View>
-);
+const abs = (s, left, top, size) => ({ position: 'absolute', left: left * s, top: top * s, width: size * s, height: size * s });
 
 export default function Hud({
   money, income, level, gems = PLACEHOLDER.gems,
   onSettings, onAddMoney, onAddGems, onMission, onSeasonPass, onCities,
 }) {
+  const { width } = useWindowDimensions();
+  const s = Math.min(width / DESIGN_W, MAX_SCALE);
   const filled = ((Math.max(1, level) - 1) % SEGMENTS) + 1;
 
   return (
-    <View style={styles.wrap} pointerEvents="box-none">
-      {/* Row 1 */}
-      <View style={styles.row} pointerEvents="box-none">
-        {/* Level badge + segmented bar */}
-        <View style={styles.levelBox}>
-          <View style={[styles.panel, styles.segments]}>
-            {Array.from({ length: SEGMENTS }).map((_, i) => (
-              <View key={i} style={[styles.seg, i < filled && styles.segOn]} />
-            ))}
-          </View>
-          <View style={styles.starWrap}>
-            <Icon name="star" size={52} />
-            <Text style={styles.starText}>{toFa(level)}</Text>
-          </View>
-        </View>
+    <View
+      pointerEvents="box-none"
+      style={{ width: DESIGN_W * s, height: DESIGN_H * s, alignSelf: 'center' }}
+    >
+      {/* Rate tab (sits behind the money pill) */}
+      <Btn s={s} x={315} y={88} w={158} h={62} r={18} color={NAVY} lipColor={NAVY_LIP} lip={6} glow={0}>
+        <T s={s} left={0} top={12} w={158} h={40} size={23} color={MINT}>
+          {formatRate(income)} {STRINGS.perSecShort}
+        </T>
+      </Btn>
 
-        {/* Money + rate tab */}
-        <View style={styles.moneyBox}>
-          <CurrencyPill icon="money" text={formatGrouped(money)} onPlus={onAddMoney} />
-          <View style={styles.rateTab} pointerEvents="none">
-            <Text style={styles.rateText}>{formatRate(income)} {STRINGS.perSecShort}</Text>
-          </View>
-        </View>
+      {/* Level: segmented bar (star badge is drawn on top at the end) */}
+      <Btn s={s} x={45} y={28} w={233} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
+        {Array.from({ length: SEGMENTS }).map((_, i) => {
+          const on = i < filled;
+          return (
+            <View
+              key={i}
+              style={{
+                position: 'absolute', left: (67 + i * 31) * s, top: 19 * s, width: 26 * s, height: 32 * s,
+                borderRadius: 6 * s, borderWidth: 2 * s,
+                backgroundColor: on ? SEG_ON : SEG_OFF, borderColor: on ? SEG_ON_EDGE : SEG_OFF_EDGE,
+              }}
+            />
+          );
+        })}
+      </Btn>
 
-        {/* Gems */}
-        <CurrencyPill icon="diamond" text={toFa(gems)} onPlus={onAddGems} style={styles.gems} />
+      {/* Settings */}
+      <Btn s={s} x={695} y={28} w={70} h={70} color={BLUE} lipColor={BLUE_LIP} onPress={onSettings}>
+        <Icon name="gear" size={42 * s} style={abs(s, 14, 14, 42)} />
+      </Btn>
 
-        {/* Settings */}
-        <Press onPress={onSettings} style={[styles.panel, styles.settings]}>
-          <Icon name="gear" size={26} />
-        </Press>
-      </View>
+      {/* Gems */}
+      <Btn s={s} x={510} y={28} w={172} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
+        <Icon name="diamond" size={36 * s} style={abs(s, 18, 17, 36)} />
+        <T s={s} left={42} top={12} w={100} h={40} size={27} adjustsFontSizeToFit>{toFa(gems)}</T>
+        <PlusBtn s={s} left={121} onPress={onAddGems} />
+      </Btn>
 
-      {/* Row 2: daily mission (left) / season pass (right) */}
-      <View style={[styles.row, styles.row2]} pointerEvents="box-none">
-        <Press onPress={onMission} style={[styles.bigBtn, styles.blue]}>
-          <Icon name="clipboard" size={32} />
-          <View style={styles.bigBtnBody}>
-            <Text style={styles.bigBtnText} numberOfLines={1}>{STRINGS.dailyMission}</Text>
-            <Bar value={PLACEHOLDER.missionProgress} />
-          </View>
-        </Press>
-        <Press onPress={onSeasonPass} style={[styles.bigBtn, styles.red]}>
-          <Icon name="crown" size={32} />
-          <View style={styles.bigBtnBody}>
-            <Text style={styles.bigBtnText} numberOfLines={1}>{STRINGS.seasonPass}</Text>
-            <Bar value={PLACEHOLDER.seasonProgress} />
-          </View>
-        </Press>
-      </View>
+      {/* Money */}
+      <Btn s={s} x={290} y={28} w={208} h={70} color={NAVY} lipColor={NAVY_LIP} glow={0.12}>
+        <Icon name="money" size={44 * s} style={abs(s, 14, 13, 44)} />
+        <T s={s} left={42} top={12} w={130} h={40} size={27} adjustsFontSizeToFit>{formatGrouped(money)}</T>
+        <PlusBtn s={s} left={156} onPress={onAddMoney} />
+      </Btn>
 
-      {/* Row 3: cities */}
-      <View style={[styles.row, styles.row3]} pointerEvents="box-none">
-        <Press onPress={onCities} style={styles.cities}>
-          <Icon name="buildings" size={38} />
-          <Text style={styles.citiesText}>{STRINGS.cities}</Text>
-        </Press>
+      {/* Season pass (right) */}
+      <Btn s={s} x={490} y={152} w={275} h={92} r={20} color={RED} lipColor={RED_LIP} onPress={onSeasonPass}>
+        <Icon name="crown" size={48 * s} style={abs(s, 26, 20, 48)} />
+        <T s={s} left={80} top={12} w={135} h={44} size={24} align="right">{STRINGS.seasonPass}</T>
+        <Bar s={s} left={87} top={60} w={171} value={PLACEHOLDER.seasonProgress} />
+      </Btn>
+
+      {/* Daily mission (left) */}
+      <Btn s={s} x={20} y={152} w={275} h={92} r={20} color={BLUE} lipColor={BLUE_LIP} onPress={onMission}>
+        <Icon name="clipboard" size={50 * s} style={abs(s, 24, 21, 50)} />
+        <T s={s} left={82} top={12} w={155} h={44} size={24} align="right">{STRINGS.dailyMission}</T>
+        <Bar s={s} left={87} top={60} w={171} value={PLACEHOLDER.missionProgress} />
+      </Btn>
+
+      {/* Cities */}
+      <Btn s={s} x={20} y={268} w={120} h={114} r={20} color={GREEN} lipColor={GREEN_LIP} onPress={onCities}>
+        <Icon name="buildings" size={62 * s} style={abs(s, 29, 12, 62)} />
+        <T s={s} left={0} top={77} w={120} h={30} size={23}>{STRINGS.cities}</T>
+      </Btn>
+
+      {/* Level star badge, on top of everything */}
+      <View pointerEvents="none" style={abs(s, 16, 20, 88)}>
+        <Icon name="star" size={88 * s} />
+        <Text
+          style={{
+            position: 'absolute', left: 0, top: 0, width: 88 * s, height: 88 * s, lineHeight: 88 * s,
+            fontSize: 34 * s, fontWeight: '900', color: '#2B2000', textAlign: 'center',
+            textAlignVertical: 'center', includeFontPadding: false,
+          }}
+        >
+          {toFa(level)}
+        </Text>
       </View>
     </View>
   );
 }
-
-const panelBase = {
-  backgroundColor: NAVY,
-  borderRadius: 14,
-  borderBottomWidth: 4,
-  borderBottomColor: NAVY_DARK,
-  elevation: 4,
-};
-
-const styles = StyleSheet.create({
-  wrap: { paddingTop: 12, paddingHorizontal: 10 },
-  row: { flexDirection: 'row', direction: 'ltr', alignItems: 'center' },
-  row2: { marginTop: 28, justifyContent: 'space-between' },
-  row3: { marginTop: 10 },
-  pressed: { transform: [{ scale: 0.95 }] },
-  panel: panelBase,
-
-  // Level
-  levelBox: { flex: 1.15, height: 46, justifyContent: 'center' },
-  segments: {
-    height: 40, marginLeft: 22, paddingLeft: 34, paddingRight: 8,
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-  },
-  seg: { width: 22, height: 26, borderRadius: 6, backgroundColor: '#2D3E78' },
-  segOn: { backgroundColor: '#4CD964' },
-  starWrap: { position: 'absolute', left: 0, top: -3, width: 52, height: 52, alignItems: 'center', justifyContent: 'center' },
-  starText: { position: 'absolute', fontSize: 20, fontWeight: '900', color: NAVY },
-
-  // Currencies
-  moneyBox: { flex: 1.35, marginLeft: 6 },
-  gems: { flex: 1.05, marginLeft: 6 },
-  currency: {
-    flexDirection: 'row', alignItems: 'center', height: 46, paddingHorizontal: 8,
-  },
-  currencyText: { flex: 1, color: '#fff', fontSize: 18, fontWeight: '900', textAlign: 'center', marginHorizontal: 4 },
-  rateTab: {
-    position: 'absolute', top: 44, alignSelf: 'center',
-    backgroundColor: NAVY, borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
-    paddingHorizontal: 14, paddingVertical: 3, borderBottomWidth: 3, borderBottomColor: NAVY_DARK,
-  },
-  rateText: { color: GREEN_TEXT, fontSize: 13, fontWeight: '800' },
-
-  // Settings
-  settings: { width: 40, height: 46, marginLeft: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: BLUE, borderBottomColor: BLUE_DARK },
-
-  // Big buttons
-  bigBtn: {
-    width: '47.5%', height: 50, borderRadius: 16, borderBottomWidth: 5, flexDirection: 'row', direction: 'ltr',
-    alignItems: 'center', paddingHorizontal: 10, elevation: 4,
-  },
-  blue: { backgroundColor: BLUE, borderBottomColor: BLUE_DARK },
-  red: { backgroundColor: RED, borderBottomColor: RED_DARK },
-  bigBtnBody: { flex: 1, marginLeft: 8 },
-  bigBtnText: { color: '#fff', fontSize: 14, fontWeight: '900', textAlign: 'right', writingDirection: 'rtl', marginBottom: 3 },
-  track: { height: 9, borderRadius: 5, backgroundColor: NAVY, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 5, backgroundColor: '#4CD964' },
-
-  // Cities
-  cities: {
-    width: 60, height: 60, borderRadius: 16, borderBottomWidth: 5, backgroundColor: GREEN, borderBottomColor: GREEN_DARK,
-    alignItems: 'center', justifyContent: 'center', elevation: 4,
-  },
-  citiesText: { color: '#fff', fontSize: 11, fontWeight: '900', marginTop: 1 },
-});
