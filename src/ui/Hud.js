@@ -10,6 +10,7 @@ import { View, Text, Pressable, useWindowDimensions } from 'react-native';
 import { STRINGS } from '../config/strings';
 import { formatGrouped, formatRate, toFa } from './format';
 import { Icon } from './Icons';
+import { FONTS } from './Fonts';
 
 const DESIGN_W = 780;
 const DESIGN_H = 352;
@@ -78,6 +79,7 @@ const Btn = ({
   );
 };
 
+// Each weight is its own font family, so there is no fontWeight here (it breaks on Android).
 const T = ({ s, left, top, w, h, size, align = 'center', color = '#fff', children, ...rest }) => (
   <Text
     numberOfLines={1}
@@ -90,7 +92,7 @@ const T = ({ s, left, top, w, h, size, align = 'center', color = '#fff', childre
       height: h * s,
       lineHeight: h * s,
       fontSize: size * s,
-      fontWeight: '900',
+      fontFamily: FONTS.bold,
       color,
       textAlign: align,
       textAlignVertical: 'center',
@@ -207,7 +209,7 @@ export default function Hud({
         <Text
           style={{
             position: 'absolute', left: 0, top: 0, width: 76 * s, height: 76 * s, lineHeight: 76 * s,
-            fontSize: 30 * s, fontWeight: '900', color: '#2B2000', textAlign: 'center',
+            fontSize: 30 * s, fontFamily: FONTS.title, color: '#2B2000', textAlign: 'center',
             textAlignVertical: 'center', includeFontPadding: false,
           }}
         >

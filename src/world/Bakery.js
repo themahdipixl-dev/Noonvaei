@@ -6,6 +6,7 @@ import { Polygon, Ellipse, Circle, Rect, G, Text as SvgText } from 'react-native
 import IsoBox from '../scene/IsoBox';
 import { boxColors, shade, pts } from '../scene/iso';
 import { PALETTE } from '../scene/palette';
+import { FONTS } from '../ui/Fonts';
 
 const Z = 7; // top of plaza slab
 
@@ -115,10 +116,10 @@ export default function Bakery({ project, tileW, gx, gy, mirror, season }) {
       <Polygon points={qy(0.85, 4.15, 3.62, 74, 112)} fill="#7f4c24" />
       {bread(2.5, 3.62, 123, 1.5)}
       <G transform={`translate(${sc.x} ${sc.y}) rotate(${angle})`}>
-        <SvgText x={0} y={4 * s} fontSize={30 * s} fontWeight="bold" fill="#fff3d1" textAnchor="middle">
+        <SvgText x={0} y={4 * s} fontSize={30 * s} fontFamily={FONTS.title} fill="#fff3d1" textAnchor="middle">
           {season.title}
         </SvgText>
-        <SvgText x={0} y={22 * s} fontSize={14 * s} fill="#f1cf8c" textAnchor="middle">
+        <SvgText x={0} y={22 * s} fontSize={14 * s} fontFamily={FONTS.regular} fill="#f1cf8c" textAnchor="middle">
           {season.sub}
         </SvgText>
       </G>

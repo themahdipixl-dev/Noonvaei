@@ -4,6 +4,7 @@ import { Pressable, Text, View, StyleSheet } from 'react-native';
 import { STRINGS } from '../config/strings';
 import { SECTION_KEYS } from '../config/balance';
 import { formatNumber, toFa } from './format';
+import { FONTS } from './Fonts';
 
 export default function UpgradePanel({ levels, costs, money, bottleneck, onUpgrade, bottom = 12 }) {
   return (
@@ -50,9 +51,9 @@ const styles = StyleSheet.create({
   cardPressed: { transform: [{ scale: 0.95 }] },
   warn: { position: 'absolute', top: -9, right: -4, fontSize: 16 },
   icon: { fontSize: 20 },
-  name: { color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 1 },
-  level: { color: '#ffeccb', fontSize: 11, marginBottom: 3 },
+  name: { fontFamily: FONTS.bold, color: '#fff', fontSize: 12, marginTop: 1 },
+  level: { fontFamily: FONTS.regular, color: '#ffeccb', fontSize: 11, marginBottom: 3 },
   cost: { backgroundColor: '#7a3b0c', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 3 },
   costOff: { backgroundColor: '#6b5a44' },
-  costText: { color: '#ffe9a8', fontWeight: 'bold', fontSize: 12 },
+  costText: { fontFamily: FONTS.bold, color: '#ffe9a8', fontSize: 12 },
 });

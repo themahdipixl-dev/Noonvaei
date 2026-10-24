@@ -7,6 +7,7 @@ import { View, Text, Pressable, StyleSheet, LayoutAnimation } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { STRINGS } from '../config/strings';
 import { TabIcon } from './Icons';
+import { FONTS } from './Fonts';
 
 // Visual order, left -> right (kept fixed regardless of text direction).
 export const TAB_ORDER = ['shop', 'cards', 'home', 'upgrade', 'minigames'];
@@ -88,6 +89,6 @@ const styles = StyleSheet.create({
   dividerLight: { position: 'absolute', left: 0, top: 0, bottom: 0, width: 1, backgroundColor: HIGHLIGHT },
   iconBox: { height: ICON_BOX, alignItems: 'center', justifyContent: 'center' },
   pressed: { transform: [{ scale: 0.9 }] },
-  label: { fontSize: 11.5, fontWeight: 'bold', color: LABEL, marginTop: 1 },
-  labelOn: { top: 5 },
+  label: { fontFamily: FONTS.medium, fontSize: 11.5, color: LABEL, marginTop: 1 },
+  labelOn: { fontFamily: FONTS.bold, top: 5 },
 });

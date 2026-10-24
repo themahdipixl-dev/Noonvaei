@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Animated, Easing, Text, View, StyleSheet } from 'react-native';
+import { FONTS } from '../ui/Fonts';
 
 function useRise(initialDelay, duration) {
   const v = useRef(new Animated.Value(0)).current;
@@ -79,7 +80,7 @@ export function FloatCoins({ x, y, text }) {
 const styles = StyleSheet.create({
   puff: { position: 'absolute', width: 14, height: 14, borderRadius: 7, backgroundColor: 'rgba(255,255,255,0.75)' },
   pop: {
-    fontSize: 17, fontWeight: 'bold', color: '#fff6c8',
+    fontFamily: FONTS.bold, fontSize: 17, color: '#fff6c8',
     textShadowColor: '#9c5614', textShadowOffset: { width: 1, height: 2 }, textShadowRadius: 2,
   },
 });

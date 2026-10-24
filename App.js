@@ -10,6 +10,7 @@ import UpgradePanel from './src/ui/UpgradePanel';
 import OfflineCard from './src/ui/OfflineCard';
 import BottomBar, { useBottomBarHeight } from './src/ui/BottomBar';
 import ComingSoon from './src/ui/ComingSoon';
+import { useAppFonts } from './src/ui/Fonts';
 import { STRINGS } from './src/config/strings';
 
 // Hide the phone's own system bars (top status bar + bottom navigation buttons / gesture line)
@@ -26,6 +27,7 @@ const hideSystemNav = () => {
 };
 
 function Game() {
+  const fontsReady = useAppFonts(); // true when fonts are loaded (or failed -> system font fallback)
   const { state, ready, income, info, level, costs, upgrade, dismissOffline } = useGame();
   const [tab, setTab] = useState('home'); // shop | cards | home | upgrade | minigames
   const barHeight = useBottomBarHeight(); // bottom bar height incl. bottom safe area
@@ -60,7 +62,8 @@ function Game() {
     };
   }, []);
 
-  if (!ready) {
+  // Wait for both the saved game and the fonts, so text never flashes in the wrong font.
+  if (!ready || !fontsReady) {
     return (
       <View style={[styles.root, styles.center]}>
         <StatusBar hidden translucent />

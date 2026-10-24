@@ -4,6 +4,7 @@ import { Polygon, Ellipse, Circle, Rect, G, Path, Polyline, Text as SvgText } fr
 import IsoBox from './../scene/IsoBox';
 import { boxColors, pts } from '../scene/iso';
 import { LOT_SIZE, seasonLabel } from './worldConfig';
+import { FONTS } from '../ui/Fonts';
 
 export function Tree({ project, tileW, x, y, k = 1 }) {
   const s = (tileW / 96) * k;
@@ -100,7 +101,7 @@ export function LockedLot({ project, tileW, lot, id }) {
       />
       <Rect x={c.x - 14 * s} y={c.y - 22 * s} width={28 * s} height={22 * s} rx={5 * s} fill="#e0a02a" stroke="#7a3b0c" strokeWidth={2.5 * s} />
       <Circle cx={c.x} cy={c.y - 12 * s} r={3.2 * s} fill="#7a3b0c" />
-      <SvgText x={c.x} y={c.y + 26 * s} fontSize={18 * s} fontWeight="bold" fill="#5a3a1a" textAnchor="middle">
+      <SvgText x={c.x} y={c.y + 26 * s} fontSize={18 * s} fontFamily={FONTS.bold} fill="#5a3a1a" textAnchor="middle">
         {seasonLabel(id)}
       </SvgText>
     </G>

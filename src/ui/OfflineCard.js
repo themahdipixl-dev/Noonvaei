@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { STRINGS } from '../config/strings';
 import { formatNumber, toFa } from './format';
+import { FONTS } from './Fonts';
 
 function formatDuration(sec) {
   const h = Math.floor(sec / 3600);
@@ -36,9 +37,9 @@ const styles = StyleSheet.create({
     padding: 28,
   },
   card: { backgroundColor: '#fff8e8', borderRadius: 20, padding: 22, alignItems: 'center', width: '100%' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#5a2e0e', marginBottom: 8 },
-  text: { fontSize: 14, color: '#6b3f1d', textAlign: 'center' },
-  amount: { fontSize: 30, fontWeight: 'bold', color: '#c26a10', marginVertical: 8 },
+  title: { fontFamily: FONTS.title, fontSize: 24, color: '#5a2e0e', marginBottom: 8 },
+  text: { fontFamily: FONTS.regular, fontSize: 14, color: '#6b3f1d', textAlign: 'center' },
+  amount: { fontFamily: FONTS.title, fontSize: 34, color: '#c26a10', marginVertical: 8 },
   btn: { marginTop: 14, backgroundColor: '#d9822b', borderRadius: 12, paddingHorizontal: 36, paddingVertical: 10 },
-  btnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  btnText: { fontFamily: FONTS.bold, color: '#fff', fontSize: 16 },
 });
