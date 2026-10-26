@@ -1,17 +1,23 @@
 // Full-screen pannable / zoomable world. Drop-in replacement for <Scene/>.
 // (Zoom / recenter buttons were removed: zoom is done by pinch gesture only.)
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, Animated, StyleSheet } from 'react-native';
 import { makeProjector } from '../scene/iso';
+import { preloadEnvironment } from '../scene/environmentAssets';
 import WorldScene from './WorldScene';
 import { useWorldCamera } from './useWorldCamera';
-import { WORLD, SEASONS, LOT_SIZE, currentSeasonIndex } from './worldConfig';
+import { WORLD, SEASONS, LOT_SIZE, WORLD_BG, currentSeasonIndex } from './worldConfig';
 
 export default function WorldMap({ level }) {
   const { grid, tileW, padX, padTop, padBottom } = WORLD;
   const W = grid * tileW + padX * 2;
   const H = (grid * tileW) / 2 + padTop + padBottom;
   const seasonIdx = currentSeasonIndex(level);
+
+  // Start downloading the WEBP art right away so it doesn't pop in.
+  useEffect(() => {
+    preloadEnvironment();
+  }, []);
 
   // Camera focus = current season bakery (offset from content center)
   const focus = useMemo(() => {
@@ -38,5 +44,5 @@ export default function WorldMap({ level }) {
 }
 
 const styles = StyleSheet.create({
-  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: '#b9d98f', overflow: 'hidden' },
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: WORLD_BG, overflow: 'hidden' },
 });
