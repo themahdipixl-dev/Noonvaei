@@ -20,11 +20,11 @@ export default function WorldMap({ level }) {
   }, []);
 
   // Camera focus = current season bakery (offset from content center)
-  const focus = useMemo(() => {
-    const lot = SEASONS[seasonIdx].lot;
-    const p = makeProjector(tileW, W / 2, padTop)(lot.x + LOT_SIZE / 2, lot.y + LOT_SIZE / 2, 40);
-    return { dx: p.x - W / 2, dy: p.y - H / 2 };
-  }, [seasonIdx, tileW, W, H, padTop]);
+ const focus = useMemo(() => {
+  const lot = SEASONS[seasonIdx].lot;
+  const p = makeProjector(tileW, W / 2, padTop, ratio)(lot.x + LOT_SIZE / 2, lot.y + LOT_SIZE / 2, 40);
+  return { dx: p.x - W / 2, dy: p.y - H / 2 };
+ }, [seasonIdx, tileW, W, H, padTop, ratio]);
 
   const cam = useWorldCamera({ contentW: W, contentH: H, focus, initialScale: 1 });
 
