@@ -11,8 +11,6 @@ import { useWorldCamera } from './useWorldCamera';
 import WorldScene from './WorldScene';
 
 function WorldMap({ level }) {
-
-export default function WorldMap({ level }) {
   const { grid, tileW, padX, padTop, padBottom, ratio } = WORLD;
   const W = grid * tileW + padX * 2;
   const H = grid * tileW * ratio + padTop + padBottom;
