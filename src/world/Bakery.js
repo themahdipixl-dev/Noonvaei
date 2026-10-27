@@ -18,10 +18,11 @@ export default function Bakery({ project, tileW, gx, gy }) {
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Image source={ENV.bakeryFront} style={layer(x, y, S)} resizeMode="contain" />
-      <Image source={ENV.bakeryBelt} style={layer(x, y, S)} resizeMode="contain" />
-      <Image source={ENV.lavash[0]} style={layer(x, y, S)} resizeMode="contain" />
-      <Image source={ENV.bakerViews[0]} style={layer(bx, by, B)} resizeMode="contain" />
+     <Image source={ENV.bakeryFront} style={layer(x, y, S)} resizeMode="contain" />
+     <Image source={ENV.bakeryBelt} style={layer(x, y, S)} resizeMode="contain" />
+     <Image source={ENV.lavash[0]} style={layer(x, y, S)} resizeMode="contain" />
+     <Image source={ENV.bakeryCutter} style={layer(x, y, S)} resizeMode="contain" />
+     <Image source={ENV.bakerViews[0]} style={layer(bx, by, B)} resizeMode="contain" />
     </View>
   );
 }
