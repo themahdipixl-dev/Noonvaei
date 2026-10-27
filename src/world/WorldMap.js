@@ -9,9 +9,9 @@ import { useWorldCamera } from './useWorldCamera';
 import { WORLD, SEASONS, LOT_SIZE, WORLD_BG, currentSeasonIndex } from './worldConfig';
 
 export default function WorldMap({ level }) {
-  const { grid, tileW, padX, padTop, padBottom } = WORLD;
+  const { grid, tileW, padX, padTop, padBottom, ratio } = WORLD;
   const W = grid * tileW + padX * 2;
-  const H = (grid * tileW) / 2 + padTop + padBottom;
+  const H = grid * tileW * ratio + padTop + padBottom;
   const seasonIdx = currentSeasonIndex(level);
 
   // Start downloading the WEBP art right away so it doesn't pop in.
