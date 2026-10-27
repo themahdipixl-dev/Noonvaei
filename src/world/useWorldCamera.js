@@ -52,7 +52,12 @@ export function useWorldCamera({ contentW, contentH, focus, initialScale = 1 }) 
       });
 
     const pinch = Gesture.Pinch()
+      .onTouchesUp(() => {
+    // first finger lifted: stop applying focal changes (it jumps to the remaining finger)
+      locked.value = true;
+      })
       .onStart((e) => {
+      locked.value = false;
         bs.value = s.value;
         bx.value = x.value;
         by.value = y.value;
@@ -60,12 +65,13 @@ export function useWorldCamera({ contentW, contentH, focus, initialScale = 1 }) 
         fy.value = e.focalY - vh.value / 2;
       })
       .onUpdate((e) => {
-        const ns = clampN(bs.value * e.scale, MIN_SCALE, MAX_SCALE);
-        const mx = e.focalX - vw.value / 2;
-        const my = e.focalY - vh.value / 2;
-        const dx = (fx.value - bx.value) / bs.value;
-        const dy = (fy.value - by.value) / bs.value;
-        place(mx - ns * dx, my - ns * dy, ns);
+      if (locked.value) return;
+      const ns = clampN(bs.value * e.scale, MIN_SCALE, MAX_SCALE);
+      const mx = e.focalX - vw.value / 2;
+      const my = e.focalY - vh.value / 2;
+      const dx = (fx.value - bx.value) / bs.value;
+      const dy = (fy.value - by.value) / bs.value;
+      place(mx - ns * dx, my - ns * dy, ns);
       });
 
     return Gesture.Simultaneous(pan, pinch);
