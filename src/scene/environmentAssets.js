@@ -15,16 +15,17 @@ export const BAKER_VIEWS = [
 
 // Lavash bread stages (1 -> 5).
 export const LAVASH = [
-  f('Lavash1.webp'),
-  f('Lavash2.webp'),
-  f('Lavash3.webp'),
-  f('Lavash4.webp'),
-  f('Lavash5.webp'),
+  f('bakery_bread_1.webp'),
+  f('bakery_bread_2.webp'),
+  f('bakery_bread_3.webp'),
+  f('bakery_bread_4.webp'),
+  f('bakery_bread_5.webp'),
 ];
 
 export const ENV = {
   bakeryFront: f('bakery_front.webp'),
   bakeryBelt: f('bakery_belt.webp'),
+  bakeryCutter: f('bakery_cutter.webp'),
   bakerViews: BAKER_VIEWS,
   lavash: LAVASH,
 };
@@ -36,6 +37,7 @@ export function preloadEnvironment() {
     ...LAVASH,
     ENV.bakeryFront,
     ENV.bakeryBelt,
+    ENV.bakeryCutter,
   ];
   return Promise.all(all.map((s) => Image.prefetch(s.uri).catch(() => false)));
 }
