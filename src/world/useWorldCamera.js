@@ -66,7 +66,7 @@ export function useWorldCamera({ contentW, contentH, focus, initialScale = 1 }) 
       })
       .onUpdate((e) => {
       if (locked.value) return;
-      const ns = clampN(bs.value * Math.pow(e.scale, 1.4), MIN_SCALE, MAX_SCALE);
+      const ns = clampN(bs.value * Math.pow(e.scale, 1.0), MIN_SCALE, MAX_SCALE);
       const mx = e.focalX - vw.value / 2;
       const my = e.focalY - vh.value / 2;
       const dx = (fx.value - bx.value) / bs.value;
