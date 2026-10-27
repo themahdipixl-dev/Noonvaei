@@ -26,18 +26,22 @@ export default function WorldMap({ level }) {
   const cam = useWorldCamera({ contentW: W, contentH: H, focus, initialScale: 1 });
 
   return (
-    <View ref={cam.viewRef} onLayout={cam.onLayout} style={styles.fill} {...cam.panHandlers}>
+  <GestureDetector gesture={cam.gesture}>
+    <View collapsable={false} onLayout={cam.onLayout} style={styles.fill}>
       <Animated.View
-        style={{
-          position: 'absolute', width: W, height: H, left: '50%', top: '50%',
-          marginLeft: -W / 2, marginTop: -H / 2,
-          transform: [{ translateX: cam.x }, { translateY: cam.y }, { scale: cam.s }],
-        }}
+        style={[
+          {
+            position: 'absolute', width: W, height: H, left: '50%', top: '50%',
+            marginLeft: -W / 2, marginTop: -H / 2,
+          },
+          cam.style,
+        ]}
       >
         <WorldScene width={W} height={H} />
       </Animated.View>
     </View>
-  );
+  </GestureDetector>
+ );
 }
 
 const styles = StyleSheet.create({
