@@ -21,16 +21,15 @@ const BOX = {
   ],
 };
 
+// All 4 baker views are cropped to the same rectangle.
+ const BAKER = box(1024, 802, 927, 1024);
+
 export default function Bakery({ project, tileW, gx, gy }) {
   const c = project(gx + LOT_SIZE / 2, gy + LOT_SIZE / 2, 0);
   const S = (LOT_SIZE * tileW) / ART.bakery.floorW;
   const x = c.x - ART.bakery.anchor.x * S;
   const y = c.y - ART.bakery.anchor.y * S;
   const k = S / REF;
-
-  const B = S * ART.baker.scale;
-  const bx = x + ART.baker.at.x * S - ART.baker.feet.x * B;
-  const by = y + ART.baker.at.y * S - ART.baker.feet.y * B;
 
   const layer = (left, top, size) => ({ position: 'absolute', left, top, width: size, height: size });
   const cropped = (b) => ({
@@ -47,7 +46,7 @@ export default function Bakery({ project, tileW, gx, gy }) {
       <Image source={ENV.bakeryBelt} style={cropped(BOX.belt)} resizeMode="stretch" />
       <Image source={ENV.lavash[0]} style={cropped(BOX.lavash[0])} resizeMode="stretch" />
       <Image source={ENV.bakeryCutter} style={cropped(BOX.cutter)} resizeMode="stretch" />
-      <Image source={ENV.bakerViews[0]} style={layer(bx, by, B)} resizeMode="contain" />
+      <Image source={ENV.bakerViews[0]} style={cropped(BAKER)} resizeMode="stretch" />
     </View>
   );
 }
