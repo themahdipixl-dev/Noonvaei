@@ -1,12 +1,9 @@
 // Full-screen pannable / zoomable world. Drop-in replacement for <Scene/>.
 // (Zoom / recenter buttons were removed: zoom is done by pinch gesture only.)
 import React, { useMemo, useEffect } from 'react';
-import { View, Animated, StyleSheet } from 'react-native';
-import { makeProjector } from '../scene/iso';
-import { preloadEnvironment } from '../scene/environmentAssets';
-import WorldScene from './WorldScene';
-import { useWorldCamera } from './useWorldCamera';
-import { WORLD, SEASONS, LOT_SIZE, WORLD_BG, currentSeasonIndex } from './worldConfig';
+import { View, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
+import { GestureDetector } from 'react-native-gesture-handler';
 
 export default function WorldMap({ level }) {
   const { grid, tileW, padX, padTop, padBottom, ratio } = WORLD;
