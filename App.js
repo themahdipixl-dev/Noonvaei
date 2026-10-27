@@ -12,6 +12,7 @@ import BottomBar, { useBottomBarHeight } from './src/ui/BottomBar';
 import ComingSoon from './src/ui/ComingSoon';
 import { useAppFonts } from './src/ui/Fonts';
 import { STRINGS } from './src/config/strings';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Hide the phone's own system bars (top status bar + bottom navigation buttons / gesture line)
 // while the game is open.
@@ -111,9 +112,11 @@ function Game() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <Game />
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <Game />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
