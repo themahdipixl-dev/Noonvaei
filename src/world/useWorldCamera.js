@@ -30,6 +30,7 @@ export function useWorldCamera({ contentW, contentH, focus, initialScale = 1 }) 
   const by = useSharedValue(0);
   const fx = useSharedValue(0);
   const fy = useSharedValue(0);
+  const locked = useSharedValue(false);
   const ready = useRef(false);
 
   const gesture = useMemo(() => {
