@@ -4,6 +4,13 @@ import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
+import { makeProjector } from '../scene/iso';
+import { preloadEnvironment } from '../scene/environmentAssets';
+import { WORLD, WORLD_BG, SEASONS, LOT_SIZE, currentSeasonIndex } from './worldConfig';
+import { useWorldCamera } from './useWorldCamera';
+import WorldScene from './WorldScene';
+
+function WorldMap({ level }) {
 
 export default function WorldMap({ level }) {
   const { grid, tileW, padX, padTop, padBottom, ratio } = WORLD;
