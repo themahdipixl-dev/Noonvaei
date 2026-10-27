@@ -37,7 +37,7 @@ export default function WorldMap({ level }) {
           transform: [{ translateX: cam.x }, { translateY: cam.y }, { scale: cam.s }],
         }}
       >
-        <WorldScene width={W} height={H} unlocked={seasonIdx + 1} />
+        <WorldScene width={W} height={H} />
       </Animated.View>
     </View>
   );
