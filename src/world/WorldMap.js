@@ -47,3 +47,5 @@ export default function WorldMap({ level }) {
 const styles = StyleSheet.create({
   fill: { ...StyleSheet.absoluteFillObject, backgroundColor: WORLD_BG, overflow: 'hidden' },
 });
+
+export default React.memo(WorldMap);
