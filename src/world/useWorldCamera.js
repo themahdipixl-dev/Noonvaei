@@ -75,7 +75,7 @@ export function useWorldCamera({ contentW, contentH, focus, initialScale = 1 }) 
       });
 
     return Gesture.Simultaneous(pan, pinch);
-  }, [contentW, contentH, x, y, s, vw, vh, px, py, bs, bx, by, fx, fy]);
+  }, [contentW, contentH, x, y, s, vw, vh, px, py, bs, bx, by, fx, fy, locked]);
 
   const onLayout = useCallback(
     (e) => {
