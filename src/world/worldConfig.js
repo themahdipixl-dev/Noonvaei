@@ -1,42 +1,44 @@
-// Static configuration of the big world map + seasons.
-// Each season (chapter) owns one bakery lot. Finishing a season unlocks the next lot.
 import { toFa } from '../ui/format';
 
 export const WORLD = {
-  grid: 20,        // world is grid x grid tiles
-  tileW: 96,       // px width of one iso tile at scale 1
+  grid: 20,
+  tileW: 96,
+  ratio: 0.577,   // tileH / tileW  ← با تصویر webp هماهنگ کن (پایین رو بخون)
   padX: 140,
   padTop: 200,
   padBottom: 100,
 };
 
-export const GROUND_COLOR = '#f3e6c8'; // cream ground of the whole environment
-export const WORLD_BG = '#ecdcb8';     // slightly darker cream behind the ground
+export const GROUND_COLOR = '#f3e6c8';
+export const WORLD_BG = '#ecdcb8';
 
-export const LOT_SIZE = 5;          // each bakery plaza is 5x5 tiles
-export const LEVELS_PER_SEASON = 10; // TODO: tie to real season completion later
+export const LOT_SIZE = 5;
+export const LEVELS_PER_SEASON = 10;
 
-// Placement of the WEBP art. All numbers are FRACTIONS of the (square) image canvas, so they
-// keep working whatever the pixel size of the exported images is. Tweak here if it looks off.
+// تنها مغازه: وسط زمین
+export const CENTER_LOT = {
+  x: (WORLD.grid - LOT_SIZE) / 2,
+  y: (WORLD.grid - LOT_SIZE) / 2,
+};
+
 export const ART = {
   bakery: {
-    floorW: 0.84,                 // width of the floor diamond / canvas width
-    anchor: { x: 0.507, y: 0.54 } // floor centre inside the canvas
+    floorW: 0.84,
+    anchor: { x: 0.507, y: 0.54 },
   },
   baker: {
-    scale: 0.36,                  // baker canvas size / bakery canvas size
-    feet: { x: 0.51, y: 0.70 },   // where the feet are inside the baker canvas
-    at: { x: 0.6, y: 0.68 },      // where the feet stand inside the bakery canvas
+    scale: 0.28,                  // قبلاً 0.36 — کوچیک‌تر شد
+    feet: { x: 0.51, y: 0.70 },
+    at: { x: 0.6, y: 0.68 },
   },
 };
 
-// mirror / awning / title are no longer used for drawing (the art is fixed WEBP) but kept
-// so the rest of the game (season names etc.) keeps working.
+// همه فصل‌ها روی همون مغازه‌ی وسط هستن
 export const SEASONS = [
-  { id: 1, title: 'نان تازه', sub: 'سنگک',  lot: { x: 3,  y: 12 }, mirror: true, awning: ['#d9534f', '#f6e7c1'] },
-  { id: 2, title: 'نان داغ',  sub: 'بربری', lot: { x: 12, y: 3  }, mirror: true, awning: ['#1d8b8b', '#f6e7c1'] },
-  { id: 3, title: 'نان لواش', sub: 'لواش',  lot: { x: 3,  y: 3  }, mirror: true, awning: ['#e8892a', '#fff3d1'] },
-  { id: 4, title: 'تافتون',   sub: 'تافتون', lot: { x: 12, y: 12 }, mirror: true, awning: ['#7b4bb7', '#f6e7c1'] },
+  { id: 1, title: 'نان تازه', sub: 'سنگک',   lot: CENTER_LOT },
+  { id: 2, title: 'نان داغ',  sub: 'بربری',  lot: CENTER_LOT },
+  { id: 3, title: 'نان لواش', sub: 'لواش',   lot: CENTER_LOT },
+  { id: 4, title: 'تافتون',   sub: 'تافتون', lot: CENTER_LOT },
 ];
 
 export const seasonLabel = (id) => `فصل ${toFa(id)}`;
