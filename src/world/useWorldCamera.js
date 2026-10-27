@@ -3,8 +3,8 @@ import { useRef, useMemo, useCallback } from 'react';
 import { Gesture } from 'react-native-gesture-handler';
 import { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
-export const MIN_SCALE = 0.45;
-export const MAX_SCALE = 2.6;
+export const MIN_SCALE = 0.25;
+export const MAX_SCALE = 3.5;
 
 const clampN = (v, a, b) => {
   'worklet';
@@ -66,7 +66,7 @@ export function useWorldCamera({ contentW, contentH, focus, initialScale = 1 }) 
       })
       .onUpdate((e) => {
       if (locked.value) return;
-      const ns = clampN(bs.value * e.scale, MIN_SCALE, MAX_SCALE);
+      const ns = clampN(bs.value * Math.pow(e.scale, 1.4), MIN_SCALE, MAX_SCALE);
       const mx = e.focalX - vw.value / 2;
       const my = e.focalY - vh.value / 2;
       const dx = (fx.value - bx.value) / bs.value;
