@@ -25,7 +25,7 @@ function WorldScene({ width, height }) {
         <Polygon points={ground} fill={GROUND_COLOR} />
       </Svg>
       <Bakery project={project} tileW={tileW} gx={CENTER_LOT.x} gy={CENTER_LOT.y} />
-      <BakerWalker tileW={tileW} ratio={ratio} originX={width / 2} originY={padTop} />
+      <BakerWalker tileW={tileW} ratio={ratio} originX={width / 2} originY={padTop} lot={CENTER_LOT} />
     </View>
   );
 }
