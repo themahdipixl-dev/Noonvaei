@@ -9,18 +9,18 @@ const f = (name) => ({ uri: BASE + name });
 // Bump WALK_VER when you re-upload the files (raw.githubusercontent caches for ~5 min).
 const CHAR_BASE =
   'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/characters/baker/';
-const WALK_VER = '?v=2';
+const WALK_VER = '?v=3';
 const w = (name) => ({ uri: CHAR_BASE + name + WALK_VER });
 
-// Original (untouched) sheets: 8 equal cells each. feetY = typical foot line (px in the sheet).
-export const BAKER_WALK_SHEETS = {
-  sw: { w: 2400, h: 578, cellW: 300, feetY: 556 },
-  se: { w: 2704, h: 647, cellW: 338, feetY: 631 },
-  ne: { w: 2632, h: 534, cellW: 329, feetY: 508 },
-  nw: { w: 2832, h: 634, cellW: 354, feetY: 605 },
+// All 4 sheets share the same layout: 8 cells of cellW x cellH,
+// feet point = (cellW / 2, feetY), character height inside a cell = refH.
+export const BAKER_WALK_SHEET = {
+  frames: 8,
+  cellW: 196,
+  cellH: 314,
+  feetY: 296,
+  refH: 288,
 };
-export const BAKER_WALK_FRAMES = 8;
-export const BAKER_WALK_REF_H = 560; // approx character height in the original sheets (px)
 
 export const BAKER_WALK = {
   sw: w('baker_walk_sw.webp'),
