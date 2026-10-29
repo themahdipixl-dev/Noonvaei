@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { ENV, BAKER_WALK_SHEET as SHEET } from '../scene/environmentAssets';
 import { WALKER } from './worldConfig';
+import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 
 // index order must match the `dir` value computed in buildPath
 const DIRS = ['sw', 'se', 'ne', 'nw'];
@@ -87,6 +88,33 @@ function DirLayer({ index, dirKey, dist, table, stride, scale }) {
     </Animated.View>
   );
 }
+
+// Soft elliptical ground shadow centered on the feet point.
+const Shadow = React.memo(function Shadow({ charH, ratio, cfg }) {
+  if (!cfg) return null;
+  const w = charH * cfg.width;
+  const h = w * ratio;
+  return (
+    <Svg
+      width={w}
+      height={h}
+      style={{
+        position: 'absolute',
+        left: -w / 2 + (cfg.offsetX || 0),
+        top: -h / 2 + (cfg.offsetY || 0),
+      }}
+    >
+      <Defs>
+        <RadialGradient id="walkerShadow" cx="50%" cy="50%" rx="50%" ry="50%">
+          <Stop offset="0" stopColor="#000" stopOpacity={cfg.opacity} />
+          <Stop offset="0.6" stopColor="#000" stopOpacity={cfg.opacity * 0.55} />
+          <Stop offset="1" stopColor="#000" stopOpacity="0" />
+        </RadialGradient>
+      </Defs>
+      <Ellipse cx={w / 2} cy={h / 2} rx={w / 2} ry={h / 2} fill="url(#walkerShadow)" />
+    </Svg>
+  );
+});
 
 function BakerWalker({ tileW, ratio, originX, originY }) {
   const { charH, speed, stride, path, dirScale } = WALKER;
