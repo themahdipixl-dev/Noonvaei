@@ -1,5 +1,5 @@
-// Baker walking along a grid path. Everything runs on the UI thread:
-// one shared value (distance walked) drives position, direction and frame.
+// Baker patrolling between stops inside the bakery.
+// One shared value (time in seconds) drives position, direction and frame.
 import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -10,47 +10,83 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
-import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg'; // NEW
+import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import { ENV, BAKER_WALK_SHEET as SHEET } from '../scene/environmentAssets';
-import { WALKER } from './worldConfig';
+import { WALKER, ART, LOT_SIZE } from './worldConfig';
 
-// index order must match the `dir` value computed in buildPath
+// index order: 0 = sw, 1 = se, 2 = ne, 3 = nw
 const DIRS = ['sw', 'se', 'ne', 'nw'];
+// frame where the legs are together (idle pose) for each direction
+const IDLE = [7, 3, 7, 6];
 
-// segment row: [start, len, x0, y0, dx, dy, dir]
-function buildPath(points) {
+const moveDir = (dx, dy) => {
+  const sx = dx - dy;
+  const sy = dx + dy;
+  return sy >= 0 ? (sx < 0 ? 0 : 1) : sx > 0 ? 2 : 3;
+};
+
+// row: [t0, dur, x0, y0, dx, dy, dir, kind(0 walk / 1 wait), segStride, len]
+function buildTimeline(stops, toGrid, speed, stride) {
+  const n = stops.length;
+  if (n < 2) return { table: [], total: 0, points: [] };
+  const points = stops.map((s) => toGrid(s.p[0], s.p[1]));
   const table = [];
-  let total = 0;
-  for (let i = 0; i < points.length - 1; i++) {
+  let t = 0;
+  let lastDir = moveDir(points[0][0] - points[n - 1][0], points[0][1] - points[n - 1][1]);
+
+  for (let i = 0; i < n; i++) {
     const [x0, y0] = points[i];
-    const [x1, y1] = points[i + 1];
+    const [x1, y1] = points[(i + 1) % n];
+    const stop = stops[i];
+
+    if (stop.wait > 0) {
+      const f = stop.face ? DIRS.indexOf(stop.face) : -1;
+      table.push([t, stop.wait, x0, y0, 0, 0, f >= 0 ? f : lastDir, 1, 1, 1]);
+      t += stop.wait;
+    }
+
     const dx = x1 - x0;
     const dy = y1 - y0;
     const len = Math.hypot(dx, dy);
-    if (len === 0) continue;
-    const sx = dx - dy;
-    const sy = dx + dy;
-    const dir = sy >= 0 ? (sx < 0 ? 0 : 1) : sx > 0 ? 2 : 3;
-    table.push([total, len, x0, y0, dx, dy, dir]);
-    total += len;
+    if (len > 0) {
+      const dir = moveDir(dx, dy);
+      // whole number of 8-frame cycles per leg, so the walk ends on the idle pose
+      const cycles = Math.max(1, Math.round(len / (stride * SHEET.frames)));
+      const segStride = len / (cycles * SHEET.frames);
+      const dur = len / speed;
+      table.push([t, dur, x0, y0, dx, dy, dir, 0, segStride, len]);
+      lastDir = dir;
+      t += dur;
+    }
   }
-  return { table, total };
+  return { table, total: t, points };
 }
 
-const sample = (table, d) => {
+const sample = (table, t) => {
   'worklet';
   let seg = table[table.length - 1];
   for (let i = 0; i < table.length; i++) {
-    if (d < table[i][0] + table[i][1]) {
+    if (t < table[i][0] + table[i][1]) {
       seg = table[i];
       break;
     }
   }
-  const k = Math.min(1, Math.max(0, (d - seg[0]) / seg[1]));
-  return { gx: seg[2] + seg[4] * k, gy: seg[3] + seg[5] * k, dir: seg[6] };
+  const dir = seg[6];
+  if (seg[7] === 1) {
+    return { gx: seg[2], gy: seg[3], dir, frame: IDLE[dir] };
+  }
+  const local = Math.min(Math.max(t - seg[0], 0), seg[1]);
+  const k = local / seg[1];
+  const step = Math.floor((k * seg[9]) / seg[8] + 1e-6);
+  return {
+    gx: seg[2] + seg[4] * k,
+    gy: seg[3] + seg[5] * k,
+    dir,
+    frame: (IDLE[dir] + step) % SHEET.frames,
+  };
 };
 
-// NEW: soft elliptical ground shadow centered on the feet point.
+// Soft elliptical ground shadow centered on the feet point.
 const Shadow = React.memo(function Shadow({ charH, ratio, cfg }) {
   if (!cfg) return null;
   const w = charH * cfg.width;
@@ -77,20 +113,17 @@ const Shadow = React.memo(function Shadow({ charH, ratio, cfg }) {
   );
 });
 
-// One layer per direction. The feet point of every cell sits exactly on the
-// walker's ground point, so all directions share the same size and baseline.
-function DirLayer({ index, dirKey, dist, table, stride, scale }) {
+function DirLayer({ index, dirKey, time, table, scale }) {
   const cw = SHEET.cellW * scale;
   const ch = SHEET.cellH * scale;
   const feet = SHEET.feetY * scale;
 
   const wrap = useAnimatedStyle(() => ({
-    opacity: sample(table, dist.value).dir === index ? 1 : 0,
+    opacity: sample(table, time.value).dir === index ? 1 : 0,
   }));
-  const strip = useAnimatedStyle(() => {
-    const frame = Math.floor(dist.value / stride) % SHEET.frames;
-    return { transform: [{ translateX: -frame * cw }] };
-  });
+  const strip = useAnimatedStyle(() => ({
+    transform: [{ translateX: -sample(table, time.value).frame * cw }],
+  }));
 
   return (
     <Animated.View
@@ -116,27 +149,40 @@ function DirLayer({ index, dirKey, dist, table, stride, scale }) {
   );
 }
 
-function BakerWalker({ tileW, ratio, originX, originY }) {
-  const { charH, speed, stride, path, dirScale, shadow } = WALKER; // NEW: shadow
-  const { table, total } = useMemo(() => buildPath(path), [path]);
-  const dist = useSharedValue(0);
+function BakerWalker({ tileW, ratio, originX, originY, lot }) {
+  const { charH, speed, stride, stops, dirScale, shadow, debug } = WALKER;
+  const tileH = tileW * ratio;
+
+  const { table, total, points } = useMemo(() => {
+    // bakery_front.webp fraction -> grid coordinates (same math Bakery.js uses)
+    const S = (LOT_SIZE * tileW) / ART.bakery.floorW;
+    const toGrid = (nx, ny) => {
+      const dx = (nx - ART.bakery.anchor.x) * S;
+      const dy = (ny - ART.bakery.anchor.y) * S;
+      const u = dx / tileW + dy / tileH;
+      const v = dy / tileH - dx / tileW;
+      return [lot.x + LOT_SIZE / 2 + u, lot.y + LOT_SIZE / 2 + v];
+    };
+    return buildTimeline(stops, toGrid, speed, stride);
+  }, [stops, tileW, tileH, lot.x, lot.y, speed, stride]);
+
+  const time = useSharedValue(0);
 
   useEffect(() => {
     if (total <= 0) return undefined;
-    dist.value = 0;
-    dist.value = withRepeat(
-      withTiming(total, { duration: (total / speed) * 1000, easing: Easing.linear }),
+    time.value = 0;
+    time.value = withRepeat(
+      withTiming(total, { duration: total * 1000, easing: Easing.linear }),
       -1,
       false
     );
-    return () => cancelAnimation(dist);
-  }, [total, speed, dist]);
+    return () => cancelAnimation(time);
+  }, [total, time]);
 
   const baseScale = charH / SHEET.refH;
-  const tileH = tileW * ratio;
 
   const body = useAnimatedStyle(() => {
-    const p = sample(table, dist.value);
+    const p = sample(table, time.value);
     return {
       transform: [
         { translateX: originX + ((p.gx - p.gy) * tileW) / 2 },
@@ -150,20 +196,33 @@ function BakerWalker({ tileW, ratio, originX, originY }) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: 0, height: 0 }, body]}>
-        {/* NEW: shadow must come BEFORE the character layers so it is drawn underneath */}
         <Shadow charH={charH} ratio={ratio} cfg={shadow} />
         {DIRS.map((d, i) => (
           <DirLayer
             key={d}
             index={i}
             dirKey={d}
-            dist={dist}
+            time={time}
             table={table}
-            stride={stride}
             scale={baseScale * ((dirScale && dirScale[d]) || 1)}
           />
         ))}
       </Animated.View>
+      {debug &&
+        points.map((g, i) => (
+          <View
+            key={i}
+            style={{
+              position: 'absolute',
+              left: originX + ((g[0] - g[1]) * tileW) / 2 - 4,
+              top: originY + ((g[0] + g[1]) * tileH) / 2 - 4,
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: 'red',
+            }}
+          />
+        ))}
     </View>
   );
 }
