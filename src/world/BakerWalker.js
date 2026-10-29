@@ -1,7 +1,8 @@
 // Baker patrolling between stops inside the bakery.
 // One shared value (time in seconds) drives position, direction and frame.
-import React, { useMemo, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+// While waiting at a stop the static baker_view image is shown instead of a walk frame.
+import React, { useMemo, useEffect, useState } from 'react';
+import { View, Image, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -14,10 +15,12 @@ import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import { ENV, BAKER_WALK_SHEET as SHEET } from '../scene/environmentAssets';
 import { WALKER, ART, LOT_SIZE } from './worldConfig';
 
-// index order: 0 = sw, 1 = se, 2 = ne, 3 = nw
+// index order: 0 = sw, 1 = se, 2 = ne, 3 = nw (same order as ENV.bakerViews)
 const DIRS = ['sw', 'se', 'ne', 'nw'];
-// frame where the legs are together (idle pose) for each direction
+// walk frame (legs together) that the walk starts / ends on, per direction
 const IDLE = [7, 3, 7, 6];
+// fallback width/height of the baker_view images until their real size is read
+const VIEW_ASPECT = [0.44, 0.446, 0.47, 0.467];
 
 const moveDir = (dx, dy) => {
   const sx = dx - dy;
@@ -73,7 +76,7 @@ const sample = (table, t) => {
   }
   const dir = seg[6];
   if (seg[7] === 1) {
-    return { gx: seg[2], gy: seg[3], dir, frame: IDLE[dir] };
+    return { gx: seg[2], gy: seg[3], dir, frame: IDLE[dir], idle: true };
   }
   const local = Math.min(Math.max(t - seg[0], 0), seg[1]);
   const k = local / seg[1];
@@ -83,8 +86,35 @@ const sample = (table, t) => {
     gy: seg[3] + seg[5] * k,
     dir,
     frame: (IDLE[dir] + step) % SHEET.frames,
+    idle: false,
   };
 };
+
+// Reads the real size of the 4 baker_view images (they are prefetched already).
+function useViewAspects() {
+  const [aspects, setAspects] = useState(VIEW_ASPECT);
+  useEffect(() => {
+    let alive = true;
+    Promise.all(
+      DIRS.map(
+        (_, i) =>
+          new Promise((resolve) => {
+            Image.getSize(
+              ENV.bakerViews[i].uri,
+              (w, h) => resolve(h > 0 ? w / h : VIEW_ASPECT[i]),
+              () => resolve(VIEW_ASPECT[i])
+            );
+          })
+      )
+    ).then((a) => {
+      if (alive) setAspects(a);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return aspects;
+}
 
 // Soft elliptical ground shadow centered on the feet point.
 const Shadow = React.memo(function Shadow({ charH, ratio, cfg }) {
@@ -113,45 +143,75 @@ const Shadow = React.memo(function Shadow({ charH, ratio, cfg }) {
   );
 });
 
-function DirLayer({ index, dirKey, time, table, scale }) {
+// One layer per direction: the walk strip while moving, the static view while waiting.
+function DirLayer({ index, dirKey, time, table, scale, aspect, idleScale, idleOffset }) {
   const cw = SHEET.cellW * scale;
   const ch = SHEET.cellH * scale;
   const feet = SHEET.feetY * scale;
 
+  // static view: bottom-center of the image sits on the ground point
+  const ih = SHEET.refH * scale * idleScale;
+  const iw = ih * aspect;
+  const [ox, oy] = idleOffset;
+
   const wrap = useAnimatedStyle(() => ({
     opacity: sample(table, time.value).dir === index ? 1 : 0,
+  }));
+  const walkOp = useAnimatedStyle(() => ({
+    opacity: sample(table, time.value).idle ? 0 : 1,
+  }));
+  const idleOp = useAnimatedStyle(() => ({
+    opacity: sample(table, time.value).idle ? 1 : 0,
   }));
   const strip = useAnimatedStyle(() => ({
     transform: [{ translateX: -sample(table, time.value).frame * cw }],
   }));
 
   return (
-    <Animated.View
-      style={[
-        {
-          position: 'absolute',
-          left: -cw / 2,
-          top: -feet,
-          width: cw,
-          height: ch,
-          overflow: 'hidden',
-        },
-        wrap,
-      ]}
-    >
+    <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: 0, height: 0 }, wrap]}>
+      <Animated.View
+        style={[
+          {
+            position: 'absolute',
+            left: -cw / 2,
+            top: -feet,
+            width: cw,
+            height: ch,
+            overflow: 'hidden',
+          },
+          walkOp,
+        ]}
+      >
+        <Animated.Image
+          source={ENV.bakerWalk[dirKey]}
+          resizeMode="stretch"
+          fadeDuration={0}
+          style={[{ width: cw * SHEET.frames, height: ch }, strip]}
+        />
+      </Animated.View>
       <Animated.Image
-        source={ENV.bakerWalk[dirKey]}
+        source={ENV.bakerViews[index]}
         resizeMode="stretch"
         fadeDuration={0}
-        style={[{ width: cw * SHEET.frames, height: ch }, strip]}
+        style={[
+          {
+            position: 'absolute',
+            left: -iw / 2 + ox,
+            top: -ih + oy,
+            width: iw,
+            height: ih,
+          },
+          idleOp,
+        ]}
       />
     </Animated.View>
   );
 }
 
 function BakerWalker({ tileW, ratio, originX, originY, lot }) {
-  const { charH, speed, stride, stops, dirScale, shadow, debug } = WALKER;
+  const { charH, speed, stride, stops, dirScale, shadow, debug, idleScale, idleOffset } = WALKER;
   const tileH = tileW * ratio;
+  const aspects = useViewAspects();
 
   const { table, total, points } = useMemo(() => {
     // bakery_front.webp fraction -> grid coordinates (same math Bakery.js uses)
@@ -205,6 +265,9 @@ function BakerWalker({ tileW, ratio, originX, originY, lot }) {
             time={time}
             table={table}
             scale={baseScale * ((dirScale && dirScale[d]) || 1)}
+            aspect={aspects[i]}
+            idleScale={(idleScale && idleScale[d]) || 1}
+            idleOffset={(idleOffset && idleOffset[d]) || [0, 0]}
           />
         ))}
       </Animated.View>
