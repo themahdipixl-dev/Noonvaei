@@ -4,6 +4,7 @@ import { View, StyleSheet } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
 import { makeProjector, pts } from '../scene/iso';
 import Bakery from './Bakery';
+import BakerWalker from './BakerWalker';
 import { WORLD, GROUND_COLOR, CENTER_LOT } from './worldConfig';
 
 function WorldScene({ width, height }) {
@@ -24,6 +25,7 @@ function WorldScene({ width, height }) {
         <Polygon points={ground} fill={GROUND_COLOR} />
       </Svg>
       <Bakery project={project} tileW={tileW} gx={CENTER_LOT.x} gy={CENTER_LOT.y} />
+      <BakerWalker tileW={tileW} ratio={ratio} originX={width / 2} originY={padTop} />
     </View>
   );
 }
