@@ -40,7 +40,7 @@ export const WALKER = {
   stride: 0.06,
   dirScale: { sw: 1, se: 1, ne: 1, nw: 1 },
     // نمای ایستا (baker_view1..4) موقع مکث
-  idleScale: { sw: 1.02, se: 1.01, ne: 1.025, nw: 1.035 }, // قد نمای ایستا نسبت به قد کاراکتر در حال راه رفتن
+  idleScale: { sw: 1, se: 1, ne: 1, nw: 1 }, // قد نمای ایستا نسبت به قد کاراکتر در حال راه رفتن
   idleOffset: { sw: [0, 0], se: [0, 0], ne: [0, 0], nw: [0, 0] }, // جابه‌جایی [x, y] به px
   shadow: {
     width: 0.62,
