@@ -1,6 +1,5 @@
 // Baker walking along a grid path. Everything runs on the UI thread:
 // one shared value (distance walked) drives position, direction and frame.
-// Sheets are used exactly as drawn (no per-frame resize / re-alignment).
 import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -11,12 +10,7 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
-import {
-  ENV,
-  BAKER_WALK_SHEETS,
-  BAKER_WALK_FRAMES,
-  BAKER_WALK_REF_H,
-} from '../scene/environmentAssets';
+import { ENV, BAKER_WALK_SHEET as SHEET } from '../scene/environmentAssets';
 import { WALKER } from './worldConfig';
 
 // index order must match the `dir` value computed in buildPath
@@ -55,19 +49,18 @@ const sample = (table, d) => {
   return { gx: seg[2] + seg[4] * k, gy: seg[3] + seg[5] * k, dir: seg[6] };
 };
 
-// One layer per direction. Positioned so that the cell's bottom-center sits on the
-// walker's ground point (cell offset is kept as drawn in the original sheet).
+// One layer per direction. The feet point of every cell sits exactly on the
+// walker's ground point, so all directions share the same size and baseline.
 function DirLayer({ index, dirKey, dist, table, stride, scale }) {
-  const sheet = BAKER_WALK_SHEETS[dirKey];
-  const cw = sheet.cellW * scale;
-  const ch = sheet.h * scale;
-  const feet = sheet.feetY * scale;
+  const cw = SHEET.cellW * scale;
+  const ch = SHEET.cellH * scale;
+  const feet = SHEET.feetY * scale;
 
   const wrap = useAnimatedStyle(() => ({
     opacity: sample(table, dist.value).dir === index ? 1 : 0,
   }));
   const strip = useAnimatedStyle(() => {
-    const frame = Math.floor(dist.value / stride) % BAKER_WALK_FRAMES;
+    const frame = Math.floor(dist.value / stride) % SHEET.frames;
     return { transform: [{ translateX: -frame * cw }] };
   });
 
@@ -89,14 +82,14 @@ function DirLayer({ index, dirKey, dist, table, stride, scale }) {
         source={ENV.bakerWalk[dirKey]}
         resizeMode="stretch"
         fadeDuration={0}
-        style={[{ width: cw * BAKER_WALK_FRAMES, height: ch }, strip]}
+        style={[{ width: cw * SHEET.frames, height: ch }, strip]}
       />
     </Animated.View>
   );
 }
 
 function BakerWalker({ tileW, ratio, originX, originY }) {
-  const { charH, speed, stride, path } = WALKER;
+  const { charH, speed, stride, path, dirScale } = WALKER;
   const { table, total } = useMemo(() => buildPath(path), [path]);
   const dist = useSharedValue(0);
 
@@ -111,7 +104,7 @@ function BakerWalker({ tileW, ratio, originX, originY }) {
     return () => cancelAnimation(dist);
   }, [total, speed, dist]);
 
-  const scale = charH / BAKER_WALK_REF_H;
+  const baseScale = charH / SHEET.refH;
   const tileH = tileW * ratio;
 
   const body = useAnimatedStyle(() => {
@@ -137,7 +130,7 @@ function BakerWalker({ tileW, ratio, originX, originY }) {
             dist={dist}
             table={table}
             stride={stride}
-            scale={scale}
+            scale={baseScale * ((dirScale && dirScale[d]) || 1)}
           />
         ))}
       </Animated.View>
