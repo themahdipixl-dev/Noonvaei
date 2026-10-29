@@ -5,6 +5,29 @@ const BASE =
   'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/environment/';
 const f = (name) => ({ uri: BASE + name });
 
+// Walking baker sprite sheets (8 frames each, one sheet per direction).
+// Bump WALK_VER when you re-upload the files (raw.githubusercontent caches for ~5 min).
+const CHAR_BASE =
+  'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/characters/baker/';
+const WALK_VER = '?v=1';
+const w = (name) => ({ uri: CHAR_BASE + name + WALK_VER });
+
+export const BAKER_WALK_SHEET = {
+  frames: 8,
+  cellW: 192,
+  cellH: 288,
+  feetX: 96,   // feet anchor inside a cell
+  feetY: 272,
+  charH: 256,  // character height inside a cell
+};
+
+export const BAKER_WALK = {
+  sw: w('baker_walk_sw.webp'),
+  se: w('baker_walk_se.webp'),
+  ne: w('baker_walk_ne.webp'),
+  nw: w('baker_walk_nw.webp'),
+};
+
 // Baker camera views.
 export const BAKER_VIEWS = [
   f('baker_view1.webp'),
@@ -27,6 +50,7 @@ export const ENV = {
   bakeryBelt: f('bakery_belt.webp'),
   bakeryCutter: f('bakery_cutter.webp'),
   bakerViews: BAKER_VIEWS,
+  bakerWalk: BAKER_WALK,
   lavash: LAVASH,
 };
 
@@ -35,6 +59,7 @@ export function preloadEnvironment() {
   const all = [
     ...BAKER_VIEWS,
     ...LAVASH,
+    ...Object.values(BAKER_WALK),
     ENV.bakeryFront,
     ENV.bakeryBelt,
     ENV.bakeryCutter,
