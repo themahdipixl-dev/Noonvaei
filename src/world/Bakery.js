@@ -46,7 +46,6 @@ export default function Bakery({ project, tileW, gx, gy }) {
       <Image source={ENV.bakeryBelt} style={cropped(BOX.belt)} resizeMode="stretch" />
       <Image source={ENV.lavash[0]} style={cropped(BOX.lavash[0])} resizeMode="stretch" />
       <Image source={ENV.bakeryCutter} style={cropped(BOX.cutter)} resizeMode="stretch" />
-      <Image source={ENV.bakerViews[0]} style={cropped(BAKER)} resizeMode="stretch" />
     </View>
   );
 }
