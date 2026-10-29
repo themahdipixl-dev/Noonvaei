@@ -10,9 +10,9 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
+import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg'; // NEW
 import { ENV, BAKER_WALK_SHEET as SHEET } from '../scene/environmentAssets';
 import { WALKER } from './worldConfig';
-import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 
 // index order must match the `dir` value computed in buildPath
 const DIRS = ['sw', 'se', 'ne', 'nw'];
@@ -49,6 +49,33 @@ const sample = (table, d) => {
   const k = Math.min(1, Math.max(0, (d - seg[0]) / seg[1]));
   return { gx: seg[2] + seg[4] * k, gy: seg[3] + seg[5] * k, dir: seg[6] };
 };
+
+// NEW: soft elliptical ground shadow centered on the feet point.
+const Shadow = React.memo(function Shadow({ charH, ratio, cfg }) {
+  if (!cfg) return null;
+  const w = charH * cfg.width;
+  const h = w * ratio;
+  return (
+    <Svg
+      width={w}
+      height={h}
+      style={{
+        position: 'absolute',
+        left: -w / 2 + (cfg.offsetX || 0),
+        top: -h / 2 + (cfg.offsetY || 0),
+      }}
+    >
+      <Defs>
+        <RadialGradient id="walkerShadow" cx="50%" cy="50%" rx="50%" ry="50%">
+          <Stop offset="0" stopColor="#000" stopOpacity={cfg.opacity} />
+          <Stop offset="0.6" stopColor="#000" stopOpacity={cfg.opacity * 0.55} />
+          <Stop offset="1" stopColor="#000" stopOpacity="0" />
+        </RadialGradient>
+      </Defs>
+      <Ellipse cx={w / 2} cy={h / 2} rx={w / 2} ry={h / 2} fill="url(#walkerShadow)" />
+    </Svg>
+  );
+});
 
 // One layer per direction. The feet point of every cell sits exactly on the
 // walker's ground point, so all directions share the same size and baseline.
@@ -89,35 +116,8 @@ function DirLayer({ index, dirKey, dist, table, stride, scale }) {
   );
 }
 
-// Soft elliptical ground shadow centered on the feet point.
-const Shadow = React.memo(function Shadow({ charH, ratio, cfg }) {
-  if (!cfg) return null;
-  const w = charH * cfg.width;
-  const h = w * ratio;
-  return (
-    <Svg
-      width={w}
-      height={h}
-      style={{
-        position: 'absolute',
-        left: -w / 2 + (cfg.offsetX || 0),
-        top: -h / 2 + (cfg.offsetY || 0),
-      }}
-    >
-      <Defs>
-        <RadialGradient id="walkerShadow" cx="50%" cy="50%" rx="50%" ry="50%">
-          <Stop offset="0" stopColor="#000" stopOpacity={cfg.opacity} />
-          <Stop offset="0.6" stopColor="#000" stopOpacity={cfg.opacity * 0.55} />
-          <Stop offset="1" stopColor="#000" stopOpacity="0" />
-        </RadialGradient>
-      </Defs>
-      <Ellipse cx={w / 2} cy={h / 2} rx={w / 2} ry={h / 2} fill="url(#walkerShadow)" />
-    </Svg>
-  );
-});
-
 function BakerWalker({ tileW, ratio, originX, originY }) {
-  const { charH, speed, stride, path, dirScale } = WALKER;
+  const { charH, speed, stride, path, dirScale, shadow } = WALKER; // NEW: shadow
   const { table, total } = useMemo(() => buildPath(path), [path]);
   const dist = useSharedValue(0);
 
@@ -150,6 +150,8 @@ function BakerWalker({ tileW, ratio, originX, originY }) {
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: 0, height: 0 }, body]}>
+        {/* NEW: shadow must come BEFORE the character layers so it is drawn underneath */}
+        <Shadow charH={charH} ratio={ratio} cfg={shadow} />
         {DIRS.map((d, i) => (
           <DirLayer
             key={d}
