@@ -35,7 +35,7 @@ export const ART = {
 
 // کاراکتر نانوای در حال راه رفتن
 export const WALKER = {
-  charH: 60,     // همون مقدار فعلی خودت
+  charH: 56,     // همون مقدار فعلی خودت
   speed: 0.6,
   stride: 0.06,
   dirScale: { sw: 1, se: 1, ne: 1, nw: 1 },
