@@ -1,5 +1,6 @@
 // Baker walking along a grid path. Everything runs on the UI thread:
 // one shared value (distance walked) drives position, direction and frame.
+// Sheets are used exactly as drawn (no per-frame resize / re-alignment).
 import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -10,7 +11,12 @@ import Animated, {
   Easing,
   cancelAnimation,
 } from 'react-native-reanimated';
-import { ENV, BAKER_WALK_SHEET as SHEET } from '../scene/environmentAssets';
+import {
+  ENV,
+  BAKER_WALK_SHEETS,
+  BAKER_WALK_FRAMES,
+  BAKER_WALK_REF_H,
+} from '../scene/environmentAssets';
 import { WALKER } from './worldConfig';
 
 // index order must match the `dir` value computed in buildPath
@@ -27,7 +33,6 @@ function buildPath(points) {
     const dy = y1 - y0;
     const len = Math.hypot(dx, dy);
     if (len === 0) continue;
-    // grid -> screen direction
     const sx = dx - dy;
     const sy = dx + dy;
     const dir = sy >= 0 ? (sx < 0 ? 0 : 1) : sx > 0 ? 2 : 3;
@@ -50,22 +55,41 @@ const sample = (table, d) => {
   return { gx: seg[2] + seg[4] * k, gy: seg[3] + seg[5] * k, dir: seg[6] };
 };
 
-function DirLayer({ index, source, dist, table, stride, fw, fh }) {
-  const clip = useAnimatedStyle(() => ({
+// One layer per direction. Positioned so that the cell's bottom-center sits on the
+// walker's ground point (cell offset is kept as drawn in the original sheet).
+function DirLayer({ index, dirKey, dist, table, stride, scale }) {
+  const sheet = BAKER_WALK_SHEETS[dirKey];
+  const cw = sheet.cellW * scale;
+  const ch = sheet.h * scale;
+  const feet = sheet.feetY * scale;
+
+  const wrap = useAnimatedStyle(() => ({
     opacity: sample(table, dist.value).dir === index ? 1 : 0,
   }));
   const strip = useAnimatedStyle(() => {
-    const frame = Math.floor(dist.value / stride) % SHEET.frames;
-    return { transform: [{ translateX: -frame * fw }] };
+    const frame = Math.floor(dist.value / stride) % BAKER_WALK_FRAMES;
+    return { transform: [{ translateX: -frame * cw }] };
   });
 
   return (
-    <Animated.View style={[StyleSheet.absoluteFill, { overflow: 'hidden' }, clip]}>
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          left: -cw / 2,
+          top: -feet,
+          width: cw,
+          height: ch,
+          overflow: 'hidden',
+        },
+        wrap,
+      ]}
+    >
       <Animated.Image
-        source={source}
+        source={ENV.bakerWalk[dirKey]}
         resizeMode="stretch"
         fadeDuration={0}
-        style={[{ width: fw * SHEET.frames, height: fh }, strip]}
+        style={[{ width: cw * BAKER_WALK_FRAMES, height: ch }, strip]}
       />
     </Animated.View>
   );
@@ -87,19 +111,15 @@ function BakerWalker({ tileW, ratio, originX, originY }) {
     return () => cancelAnimation(dist);
   }, [total, speed, dist]);
 
-  const s = charH / SHEET.charH;
-  const fw = SHEET.cellW * s;
-  const fh = SHEET.cellH * s;
+  const scale = charH / BAKER_WALK_REF_H;
   const tileH = tileW * ratio;
 
   const body = useAnimatedStyle(() => {
     const p = sample(table, dist.value);
-    const sx = originX + ((p.gx - p.gy) * tileW) / 2;
-    const sy = originY + ((p.gx + p.gy) * tileH) / 2;
     return {
       transform: [
-        { translateX: sx - SHEET.feetX * s },
-        { translateY: sy - SHEET.feetY * s },
+        { translateX: originX + ((p.gx - p.gy) * tileW) / 2 },
+        { translateY: originY + ((p.gx + p.gy) * tileH) / 2 },
       ],
     };
   });
@@ -108,17 +128,16 @@ function BakerWalker({ tileW, ratio, originX, originY }) {
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: fw, height: fh }, body]}>
+      <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: 0, height: 0 }, body]}>
         {DIRS.map((d, i) => (
           <DirLayer
             key={d}
             index={i}
-            source={ENV.bakerWalk[d]}
+            dirKey={d}
             dist={dist}
             table={table}
             stride={stride}
-            fw={fw}
-            fh={fh}
+            scale={scale}
           />
         ))}
       </Animated.View>
