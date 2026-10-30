@@ -6,7 +6,7 @@ import { makeProjector, pts } from '../scene/iso';
 import Bakery from './Bakery';
 import BakerWalker from './BakerWalker';
 import CarDriver from './CarDriver';
-import { WORLD, GROUND_COLOR, CENTER_LOT } from './worldConfig';
+import { WORLD, GROUND_COLOR, CENTER_LOT, CARS } from './worldConfig';
 
 function WorldScene({ width, height }) {
   const { grid, tileW, padTop, ratio } = WORLD;
@@ -27,7 +27,16 @@ function WorldScene({ width, height }) {
       </Svg>
       <Bakery project={project} tileW={tileW} gx={CENTER_LOT.x} gy={CENTER_LOT.y} />
       <BakerWalker tileW={tileW} ratio={ratio} originX={width / 2} originY={padTop} lot={CENTER_LOT} />
-      <CarDriver tileW={tileW} ratio={ratio} originX={width / 2} originY={padTop} />
+      {CARS.map((car) => (
+        <CarDriver
+          key={car.id}
+          car={car}
+          tileW={tileW}
+          ratio={ratio}
+          originX={width / 2}
+          originY={padTop}
+        />
+      ))}
     </View>
   );
 }
