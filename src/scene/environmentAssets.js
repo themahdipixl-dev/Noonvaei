@@ -55,6 +55,11 @@ export const VEHICLES = {
   // next car: samand: vehicleViews('samand'),
 };
 
+// Rim image (square, transparent corners): assets/vehicles/<id>/<id>_rim.webp
+export const VEHICLE_RIMS = {
+  peugeot_pars: { uri: `${VEHICLE_BASE}peugeot_pars/peugeot_pars_rim.webp${VEHICLE_VER}` },
+};
+
 // Lavash bread stages (1 -> 5).
 export const LAVASH = [
   f('bakery_bread_1.webp'),
@@ -71,6 +76,7 @@ export const ENV = {
   bakerViews: BAKER_VIEWS,
   bakerWalk: BAKER_WALK,
   vehicles: VEHICLES,
+  vehicleRims: VEHICLE_RIMS,
   lavash: LAVASH,
 };
 
@@ -81,6 +87,7 @@ export function preloadEnvironment() {
     ...LAVASH,
     ...Object.values(BAKER_WALK),
     ...Object.values(VEHICLES).flatMap((v) => Object.values(v)),
+    ...Object.values(VEHICLE_RIMS),
     ENV.bakeryFront,
     ENV.bakeryBelt,
     ENV.bakeryCutter,
