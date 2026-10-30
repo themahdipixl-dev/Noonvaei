@@ -134,55 +134,51 @@ export function stepCar(s, v, a, t, dt, R) {
   const c = R.drive;
   const L = R.L;
   const p = mod(s, L);
-  let vFree = c.cruise;
-  let req = 0; // deceleration needed to satisfy the strictest constraint ahead
+  const plan = c.brake; // شتاب منفی نرم برای برنامه‌ریزی توقف
+  let vLimit = c.cruise;
   let hold = false;
 
+  // پیچ‌ها: قبل از پیچ به cornerSpeed برسد
   for (let i = 0; i < R.zones.length; i++) {
     const z = R.zones[i];
     const rel = mod(p - z[0], L);
     if (rel <= z[1]) {
-      if (c.cornerSpeed < vFree) vFree = c.cornerSpeed;
-    } else if (v > c.cornerSpeed) {
+      vLimit = Math.min(vLimit, c.cornerSpeed);
+    } else {
       const d = L - rel;
-      const r = (v * v - c.cornerSpeed * c.cornerSpeed) / (2 * Math.max(d, 0.05));
-      if (r > req) req = r;
+      vLimit = Math.min(
+        vLimit,
+        Math.sqrt(c.cornerSpeed * c.cornerSpeed + 2 * plan * d)
+      );
     }
   }
 
+  // چراغ‌ها: توقف کامل پشت خط، ماندن تا سبز + زمان واکنش
   for (let i = 0; i < R.lights.length; i++) {
     const l = R.lights[i];
     const st = lightState(l, t);
     const d = mod(l[0] - p, L);
     if (d > L - 0.4) {
-      if (st[0] !== 0 && v < 0.25) hold = true; // stopped right at the line
+      if (st[0] !== 0 && v < 0.25) hold = true; // کمی رد شده و هنوز قرمزه
       continue;
     }
-    let active = st[0] !== 0 || (st[1] < c.reaction && v < 0.1);
-    // yellow and too close to stop comfortably: drive through
-    if (active && st[0] === 1 && v > 0.4 && (v * v) / (2 * c.brakeMax) > d - c.margin) {
-      active = false;
+    let stop = st[0] !== 0 || (st[1] < c.reaction && v < 0.1);
+    // زرد و خیلی نزدیک: رد می‌شه
+    if (stop && st[0] === 1 && v > 0.4 && (v * v) / (2 * c.brakeMax) > d - c.margin) {
+      stop = false;
     }
-    if (!active) continue;
+    if (!stop) continue;
     const dEff = d - c.margin;
-    if (dEff < 0.12) hold = true;
-    const r = (v * v) / (2 * Math.max(dEff, 0.04));
-    if (r > req) req = r;
+    if (dEff <= 0.01 || (v < 0.08 && dEff < 0.45)) hold = true;
+    vLimit = Math.min(vLimit, Math.sqrt(2 * plan * Math.max(dEff, 0)));
   }
 
-  let aFree;
-  if (t < c.startDelay) aFree = 0;
-  else if (v < vFree) aFree = c.accel * Math.max(0, 1 - v / (vFree * 1.06));
-  else aFree = -Math.min(c.brake, 1.5 * (v - vFree));
-  if (hold || t < c.startDelay) aFree = Math.min(aFree, 0);
-  if (req > c.brake * 0.35) aFree = Math.min(aFree, 0); // lift off the gas first
+  let vTarget = vLimit;
+  if (hold || t < c.startDelay) vTarget = 0;
 
-  let aDes = aFree;
-  if (req > c.brake * 0.7) {
-    // brake gets gentler right before stopping
-    const limit = Math.min(c.brakeMax, 0.3 + 1.6 * v);
-    aDes = Math.min(aDes, -Math.min(req, limit));
-  }
+  const gain = c.gain || 4;
+  let aDes = gain * (vTarget - v);
+  aDes = Math.max(-c.brakeMax, Math.min(c.accel, aDes));
 
   const dj = c.jerk * dt;
   let na = a + Math.max(-dj, Math.min(dj, aDes - a));
@@ -191,7 +187,7 @@ export function stepCar(s, v, a, t, dt, R) {
     nv = 0;
     na = 0;
   }
-  if (hold && nv < 0.03 && aDes <= 0) {
+  if (hold && nv < 0.05) {
     nv = 0;
     na = 0;
   }
