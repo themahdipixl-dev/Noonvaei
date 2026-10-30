@@ -37,17 +37,22 @@ export const BAKER_VIEWS = [
   f('baker_view4.webp'),
 ];
 
-// Car views (static image per direction).
-const CAR_BASE =
-  'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/vehicles/car/';
-const CAR_VER = '?v=1';
-const c = (name) => ({ uri: CAR_BASE + name + CAR_VER });
+// Vehicles: assets/vehicles/<id>/<id>_<dir>.webp  (dir = sw | se | ne | nw)
+// Bump VEHICLE_VER when you re-upload the files.
+const VEHICLE_BASE =
+  'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/vehicles/';
+const VEHICLE_VER = '?v=1';
+const vehicleViews = (id) => {
+  const out = {};
+  ['sw', 'se', 'ne', 'nw'].forEach((d) => {
+    out[d] = { uri: `${VEHICLE_BASE}${id}/${id}_${d}.webp${VEHICLE_VER}` };
+  });
+  return out;
+};
 
-export const CAR_VIEWS = {
-  sw: c('car_sw.webp'),
-  se: c('car_se.webp'),
-  ne: c('car_ne.webp'),
-  nw: c('car_nw.webp'),
+export const VEHICLES = {
+  peugeot_pars: vehicleViews('peugeot_pars'),
+  // next car: samand: vehicleViews('samand'),
 };
 
 // Lavash bread stages (1 -> 5).
@@ -65,7 +70,7 @@ export const ENV = {
   bakeryCutter: f('bakery_cutter.webp'),
   bakerViews: BAKER_VIEWS,
   bakerWalk: BAKER_WALK,
-  car: CAR_VIEWS,
+  vehicles: VEHICLES,
   lavash: LAVASH,
 };
 
@@ -75,10 +80,10 @@ export function preloadEnvironment() {
     ...BAKER_VIEWS,
     ...LAVASH,
     ...Object.values(BAKER_WALK),
+    ...Object.values(VEHICLES).flatMap((v) => Object.values(v)),
     ENV.bakeryFront,
     ENV.bakeryBelt,
     ENV.bakeryCutter,
-    ...Object.values(CAR_VIEWS),
   ];
   return Promise.all(all.map((s) => Image.prefetch(s.uri).catch(() => false)));
 }
