@@ -37,6 +37,19 @@ export const BAKER_VIEWS = [
   f('baker_view4.webp'),
 ];
 
+// Car views (static image per direction).
+const CAR_BASE =
+  'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/vehicles/car/';
+const CAR_VER = '?v=1';
+const c = (name) => ({ uri: CAR_BASE + name + CAR_VER });
+
+export const CAR_VIEWS = {
+  sw: c('car_sw.webp'),
+  se: c('car_se.webp'),
+  ne: c('car_ne.webp'),
+  nw: c('car_nw.webp'),
+};
+
 // Lavash bread stages (1 -> 5).
 export const LAVASH = [
   f('bakery_bread_1.webp'),
@@ -52,6 +65,7 @@ export const ENV = {
   bakeryCutter: f('bakery_cutter.webp'),
   bakerViews: BAKER_VIEWS,
   bakerWalk: BAKER_WALK,
+  car: CAR_VIEWS,
   lavash: LAVASH,
 };
 
@@ -64,6 +78,7 @@ export function preloadEnvironment() {
     ENV.bakeryFront,
     ENV.bakeryBelt,
     ENV.bakeryCutter,
+    ...Object.values(CAR_VIEWS),
   ];
   return Promise.all(all.map((s) => Image.prefetch(s.uri).catch(() => false)));
 }
