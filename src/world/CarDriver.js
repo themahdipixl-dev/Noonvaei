@@ -1,142 +1,211 @@
-// One car driving a looped route. Static image per direction (sw / se / ne / nw).
-// Usage: <CarDriver car={CARS[0]} ... />  (car = entry of CARS in worldConfig)
-import React, { useMemo, useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+// One car driving a looped route with a simple driver model:
+// accelerates from rest, cruises, slows for corners, stops at (virtual) red lights.
+// Wheels (rims) rotate with the distance travelled and are drawn as iso ellipses.
+import React, { useMemo } from 'react';
+import { View, Image, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-  cancelAnimation,
+  useFrameCallback,
 } from 'react-native-reanimated';
+import Svg, { Polygon } from 'react-native-svg';
 import { ENV } from '../scene/environmentAssets';
+import { DIRS, buildPath, buildLights, pathAt, stepCar } from './carPhysics';
 
-// index order: 0 = sw, 1 = se, 2 = ne, 3 = nw
-const DIRS = ['sw', 'se', 'ne', 'nw'];
+// Rim: a circle in the vertical plane along the car, projected to the iso screen.
+// local x -> car forward direction (screen vector f), local y -> screen down.
+const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, debug }) {
+  const d = rim.d * w * scale;
+  const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${angle.value}deg` }] }));
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: rim.x * w - d / 2,
+        top: rim.y * h - d / 2,
+        width: d,
+        height: d,
+        transform: [{ matrix: [f[0], f[1], 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] }],
+        borderWidth: debug ? 1 : 0,
+        borderColor: 'red',
+      }}
+    >
+      <Animated.View style={[{ width: d, height: d, borderRadius: d / 2, overflow: 'hidden' }, spin]}>
+        <Image source={source} resizeMode="stretch" fadeDuration={0} style={{ width: d, height: d }} />
+      </Animated.View>
+    </View>
+  );
+});
 
-const moveDir = (dx, dy) => {
-  const sx = dx - dy;
-  const sy = dx + dy;
-  return sy >= 0 ? (sx < 0 ? 0 : 1) : sx > 0 ? 2 : 3;
-};
-
-// row: [t0, dur, x0, y0, dx, dy, dir]
-function buildRoute(points, speed) {
-  const n = points.length;
-  if (n < 2) return { table: [], total: 0 };
-  const table = [];
-  let t = 0;
-  for (let i = 0; i < n; i++) {
-    const [x0, y0] = points[i];
-    const [x1, y1] = points[(i + 1) % n];
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const len = Math.hypot(dx, dy);
-    if (len <= 0) continue;
-    const dur = len / speed;
-    table.push([t, dur, x0, y0, dx, dy, moveDir(dx, dy)]);
-    t += dur;
-  }
-  return { table, total: t };
-}
-
-const sample = (table, t) => {
-  'worklet';
-  let seg = table[table.length - 1];
-  for (let i = 0; i < table.length; i++) {
-    if (t < table[i][0] + table[i][1]) {
-      seg = table[i];
-      break;
-    }
-  }
-  const k = Math.min(Math.max((t - seg[0]) / seg[1], 0), 1);
-  return { gx: seg[2] + seg[4] * k, gy: seg[3] + seg[5] * k, dir: seg[6] };
-};
-
-function CarLayer({ car, index, dirKey, time, table }) {
-  const { width, anchorY, aspect, scale, offset } = car;
+function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
+  const { width, anchorY, aspect, scale, offset, rims, rimScale = 1, debug } = car;
   const w = width * (scale[dirKey] || 1);
   const h = w / (aspect[dirKey] || 1.45);
   const [ox, oy] = offset[dirKey] || [0, 0];
+  const rimSource = ENV.vehicleRims && ENV.vehicleRims[car.id];
 
-  const op = useAnimatedStyle(() => ({
-    opacity: sample(table, time.value).dir === index ? 1 : 0,
-  }));
+  const op = useAnimatedStyle(() => ({ opacity: dirV.value === index ? 1 : 0 }));
 
   return (
-    <Animated.Image
-      source={ENV.vehicles[car.id][dirKey]}
-      resizeMode="stretch"
-      fadeDuration={0}
+    <Animated.View
       style={[
         { position: 'absolute', left: -w / 2 + ox, top: -h * anchorY + oy, width: w, height: h },
         op,
       ]}
-    />
+    >
+      <Image
+        source={ENV.vehicles[car.id][dirKey]}
+        resizeMode="stretch"
+        fadeDuration={0}
+        style={{ width: w, height: h }}
+      />
+      {rimSource &&
+        ((rims && rims[dirKey]) || []).map((r, i) => (
+          <Rim
+            key={i}
+            rim={r}
+            w={w}
+            h={h}
+            f={f}
+            angle={angle}
+            source={rimSource}
+            scale={rimScale}
+            debug={debug}
+          />
+        ))}
+    </Animated.View>
   );
 }
 
-function CarDriver({ car, tileW, ratio, originX, originY }) {
-  const { width, speed, route, shadow, startAt = 0 } = car;
-  const tileH = tileW * ratio;
-  const { table, total } = useMemo(() => buildRoute(route, speed), [route, speed]);
-  const time = useSharedValue(0);
-
-  useEffect(() => {
-    if (total <= 0) return undefined;
-    const start = total * startAt;
-    time.value = start;
-    // first run finishes the current lap, then loops from 0
-    time.value = withTiming(
-      total,
-      { duration: (total - start) * 1000, easing: Easing.linear },
-      (done) => {
-        'worklet';
-        if (done) {
-          time.value = 0;
-          time.value = withRepeat(
-            withTiming(total, { duration: total * 1000, easing: Easing.linear }),
-            -1,
-            false
-          );
-        }
+// Ground shadow: an ellipse drawn on the iso ground plane (3 soft rings).
+const Shadow = React.memo(function Shadow({ cfg, tileW, ratio, alongX, parity, dirV }) {
+  const g = useMemo(() => {
+    const tileH = tileW * ratio;
+    const a = cfg.length / 2;
+    const b = cfg.width / 2;
+    const rx = alongX ? a : b;
+    const ry = alongX ? b : a;
+    let maxX = 0;
+    let maxY = 0;
+    const rings = [1, 0.78, 0.56].map((k) => {
+      const pts = [];
+      for (let i = 0; i < 28; i++) {
+        const th = (i / 28) * Math.PI * 2;
+        const ux = Math.cos(th) * rx * k;
+        const uy = Math.sin(th) * ry * k;
+        const sx = ((ux - uy) * tileW) / 2;
+        const sy = ((ux + uy) * tileH) / 2;
+        pts.push([sx, sy]);
+        maxX = Math.max(maxX, Math.abs(sx));
+        maxY = Math.max(maxY, Math.abs(sy));
       }
-    );
-    return () => cancelAnimation(time);
-  }, [total, startAt, time]);
+      return pts;
+    });
+    const W = Math.ceil(maxX) + 2;
+    const H = Math.ceil(maxY) + 2;
+    return {
+      W,
+      H,
+      rings: rings.map((pts) => pts.map(([x, y]) => `${x + W},${y + H}`).join(' ')),
+    };
+  }, [cfg.length, cfg.width, tileW, ratio, alongX]);
+
+  const op = useAnimatedStyle(() => ({ opacity: dirV.value % 2 === parity ? 1 : 0 }));
+
+  return (
+    <Animated.View
+      style={[
+        { position: 'absolute', left: -g.W + (cfg.dx || 0), top: -g.H + (cfg.dy || 0) },
+        op,
+      ]}
+    >
+      <Svg width={g.W * 2} height={g.H * 2}>
+        {g.rings.map((p, i) => (
+          <Polygon key={i} points={p} fill="#000" fillOpacity={cfg.opacity * 0.5} />
+        ))}
+      </Svg>
+    </Animated.View>
+  );
+});
+
+function CarDriver({ car, tileW, ratio, originX, originY }) {
+  const { drive, route, lights, shadow, wheelCirc, startAt = 0 } = car;
+  const tileH = tileW * ratio;
+
+  const R = useMemo(() => {
+    const path = buildPath(route, drive.cornerRadius, 0.05, 0.4);
+    if (!path) return null;
+    return {
+      ...path,
+      lights: buildLights(lights, path, drive.halfLength),
+      drive,
+    };
+  }, [route, lights, drive]);
+
+  // forward direction of each sprite on screen (unit vector)
+  const FWD = useMemo(() => {
+    const n = Math.hypot(0.5, ratio / 2);
+    const fx = 0.5 / n;
+    const fy = ratio / 2 / n;
+    return { sw: [-fx, fy], se: [fx, fy], ne: [fx, -fy], nw: [-fx, -fy] };
+  }, [ratio]);
+
+  const init = R ? pathAt(R, startAt * R.L) : [0, 0, 0];
+  const sS = useSharedValue(R ? startAt * R.L : 0);
+  const vS = useSharedValue(0);
+  const aS = useSharedValue(0);
+  const clock = useSharedValue(0);
+  const gx = useSharedValue(init[0]);
+  const gy = useSharedValue(init[1]);
+  const dirV = useSharedValue(init[2]);
+  const ang = useSharedValue(0);
+
+  useFrameCallback((info) => {
+    'worklet';
+    if (!R) return;
+    const dt = Math.min((info.timeSincePreviousFrame || 0) / 1000, 0.05);
+    if (dt <= 0) return;
+    clock.value += dt;
+    const r = stepCar(sS.value, vS.value, aS.value, clock.value, dt, R);
+    sS.value = r[0];
+    vS.value = r[1];
+    aS.value = r[2];
+    const p = pathAt(R, r[0]);
+    gx.value = p[0];
+    gy.value = p[1];
+    dirV.value = p[2];
+    ang.value = ((r[0] / wheelCirc) * 360) % 360;
+  });
 
   const body = useAnimatedStyle(() => {
-    const p = sample(table, time.value);
+    // tiny road vibration, only while moving
+    const bob = Math.sin(sS.value * 10) * 0.35 * Math.min(vS.value / drive.cruise, 1);
     return {
       transform: [
-        { translateX: originX + ((p.gx - p.gy) * tileW) / 2 },
-        { translateY: originY + ((p.gx + p.gy) * tileH) / 2 + Math.sin(time.value * 14) * 0.5 },
+        { translateX: originX + ((gx.value - gy.value) * tileW) / 2 },
+        { translateY: originY + ((gx.value + gy.value) * tileH) / 2 + bob },
       ],
     };
   });
 
-  if (total <= 0) return null;
-
-  const sw = width * shadow.width;
-  const sh = sw * ratio;
+  if (!R) return null;
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: 0, height: 0 }, body]}>
-        <View
-          style={{
-            position: 'absolute',
-            left: -sw / 2,
-            top: -sh / 2 + shadow.offsetY,
-            width: sw,
-            height: sh,
-            borderRadius: sw / 2,
-            backgroundColor: `rgba(0,0,0,${shadow.opacity})`,
-          }}
-        />
+        <Shadow cfg={shadow} tileW={tileW} ratio={ratio} alongX={false} parity={0} dirV={dirV} />
+        <Shadow cfg={shadow} tileW={tileW} ratio={ratio} alongX parity={1} dirV={dirV} />
         {DIRS.map((d, i) => (
-          <CarLayer key={d} car={car} index={i} dirKey={d} time={time} table={table} />
+          <CarLayer
+            key={d}
+            car={car}
+            index={i}
+            dirKey={d}
+            dirV={dirV}
+            angle={ang}
+            f={FWD[d]}
+            ratio={ratio}
+          />
         ))}
       </Animated.View>
     </View>
