@@ -41,7 +41,7 @@ export const BAKER_VIEWS = [
 // Bump VEHICLE_VER when you re-upload the files.
 const VEHICLE_BASE =
   'https://raw.githubusercontent.com/themahdipixl-dev/Assets/main/assets/vehicles/';
-const VEHICLE_VER = '?v=1';
+const VEHICLE_VER = '?v=2';
 const vehicleViews = (id) => {
   const out = {};
   ['sw', 'se', 'ne', 'nw'].forEach((d) => {
