@@ -1,6 +1,5 @@
-// Car driving a loop around the bakery.
-// One shared value (time in seconds) drives position and direction.
-// Each direction is a static image (car_sw / car_se / car_ne / car_nw).
+// One car driving a looped route. Static image per direction (sw / se / ne / nw).
+// Usage: <CarDriver car={CARS[0]} ... />  (car = entry of CARS in worldConfig)
 import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
@@ -12,7 +11,6 @@ import Animated, {
   cancelAnimation,
 } from 'react-native-reanimated';
 import { ENV } from '../scene/environmentAssets';
-import { CAR } from './worldConfig';
 
 // index order: 0 = sw, 1 = se, 2 = ne, 3 = nw
 const DIRS = ['sw', 'se', 'ne', 'nw'];
@@ -56,8 +54,8 @@ const sample = (table, t) => {
   return { gx: seg[2] + seg[4] * k, gy: seg[3] + seg[5] * k, dir: seg[6] };
 };
 
-function CarLayer({ index, dirKey, time, table }) {
-  const { width, anchorY, aspect, scale, offset } = CAR;
+function CarLayer({ car, index, dirKey, time, table }) {
+  const { width, anchorY, aspect, scale, offset } = car;
   const w = width * (scale[dirKey] || 1);
   const h = w / (aspect[dirKey] || 1.45);
   const [ox, oy] = offset[dirKey] || [0, 0];
@@ -68,7 +66,7 @@ function CarLayer({ index, dirKey, time, table }) {
 
   return (
     <Animated.Image
-      source={ENV.car[dirKey]}
+      source={ENV.vehicles[car.id][dirKey]}
       resizeMode="stretch"
       fadeDuration={0}
       style={[
@@ -79,29 +77,40 @@ function CarLayer({ index, dirKey, time, table }) {
   );
 }
 
-function CarDriver({ tileW, ratio, originX, originY }) {
-  const { width, speed, route, shadow } = CAR;
+function CarDriver({ car, tileW, ratio, originX, originY }) {
+  const { width, speed, route, shadow, startAt = 0 } = car;
   const tileH = tileW * ratio;
   const { table, total } = useMemo(() => buildRoute(route, speed), [route, speed]);
   const time = useSharedValue(0);
 
   useEffect(() => {
     if (total <= 0) return undefined;
-    time.value = 0;
-    time.value = withRepeat(
-      withTiming(total, { duration: total * 1000, easing: Easing.linear }),
-      -1,
-      false
+    const start = total * startAt;
+    time.value = start;
+    // first run finishes the current lap, then loops from 0
+    time.value = withTiming(
+      total,
+      { duration: (total - start) * 1000, easing: Easing.linear },
+      (done) => {
+        'worklet';
+        if (done) {
+          time.value = 0;
+          time.value = withRepeat(
+            withTiming(total, { duration: total * 1000, easing: Easing.linear }),
+            -1,
+            false
+          );
+        }
+      }
     );
     return () => cancelAnimation(time);
-  }, [total, time]);
+  }, [total, startAt, time]);
 
   const body = useAnimatedStyle(() => {
     const p = sample(table, time.value);
     return {
       transform: [
         { translateX: originX + ((p.gx - p.gy) * tileW) / 2 },
-        // small bounce so the car feels alive
         { translateY: originY + ((p.gx + p.gy) * tileH) / 2 + Math.sin(time.value * 14) * 0.5 },
       ],
     };
@@ -127,7 +136,7 @@ function CarDriver({ tileW, ratio, originX, originY }) {
           }}
         />
         {DIRS.map((d, i) => (
-          <CarLayer key={d} index={i} dirKey={d} time={time} table={table} />
+          <CarLayer key={d} car={car} index={i} dirKey={d} time={time} table={table} />
         ))}
       </Animated.View>
     </View>
