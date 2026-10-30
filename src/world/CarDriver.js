@@ -12,37 +12,46 @@ import Svg, { Polygon } from 'react-native-svg';
 import { ENV } from '../scene/environmentAssets';
 import { DIRS, buildPath, buildLights, pathAt, stepCar } from './carPhysics';
 
-// Rim: a circle in the vertical plane along the car, projected to the iso screen.
-// local x -> car forward direction (screen vector f), local y -> screen down.
-const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, debug }) {
-  const d = rim.d * w * scale;
-  const spin = useAnimatedStyle(() => ({ transform: [{ rotate: `${angle.value}deg` }] }));
+// Rim: دایره‌ی چرخان که با scaleX فشرده و با rotate کج می‌شه تا بیضیِ چرخ sprite بشه.
+// d = قطر بزرگ بیضی (کسری از عرض عکس)، k = نسبت قطر کوچک/بزرگ، rot = کج‌شدن به درجه
+const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, k0, rot0, debug }) {
+  const major = rim.d * w * scale;
+  const k = rim.k ?? k0;
+  const rot = rim.rot ?? rot0;
+  const sign = f[0] >= 0 ? 1 : -1; // جهت چرخش به سمت حرکت
+  const spin = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${sign * angle.value}deg` }],
+  }));
   return (
     <View
       style={{
         position: 'absolute',
-        left: rim.x * w - d / 2,
-        top: rim.y * h - d / 2,
-        width: d,
-        height: d,
-        transform: [{ matrix: [f[0], f[1], 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] }],
+        left: rim.x * w - major / 2,
+        top: rim.y * h - major / 2,
+        width: major,
+        height: major,
+        transform: [{ rotate: `${rot}deg` }, { scaleX: k }],
         borderWidth: debug ? 1 : 0,
         borderColor: 'red',
+        borderRadius: major / 2,
       }}
     >
-      <Animated.View style={[{ width: d, height: d, borderRadius: d / 2, overflow: 'hidden' }, spin]}>
-        <Image source={source} resizeMode="stretch" fadeDuration={0} style={{ width: d, height: d }} />
+      <Animated.View
+        style={[{ width: major, height: major, borderRadius: major / 2, overflow: 'hidden' }, spin]}
+      >
+        <Image source={source} resizeMode="stretch" fadeDuration={0} style={{ width: major, height: major }} />
       </Animated.View>
     </View>
   );
 });
 
 function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
-  const { width, anchorY, aspect, scale, offset, rims, rimScale = 1, debug } = car;
+  const { width, anchorY, aspect, scale, offset, rims, rimScale = 1, rimK = 0.72, rimRot, debug } = car;
   const w = width * (scale[dirKey] || 1);
   const h = w / (aspect[dirKey] || 1.45);
   const [ox, oy] = offset[dirKey] || [0, 0];
   const rimSource = ENV.vehicleRims && ENV.vehicleRims[car.id];
+  const rot0 = (rimRot && rimRot[dirKey]) ?? 0;
 
   const op = useAnimatedStyle(() => ({ opacity: dirV.value === index ? 1 : 0 }));
 
@@ -70,6 +79,8 @@ function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
             angle={angle}
             source={rimSource}
             scale={rimScale}
+            k0={rimK}
+            rot0={rot0}
             debug={debug}
           />
         ))}
