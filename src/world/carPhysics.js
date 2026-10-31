@@ -85,7 +85,7 @@ export function buildPath(points, radius = 1.3, step = 0.05, zonePad = 0.4) {
   return { L, N, ds, X, Y, D, zones };
 }
 
-// light row: [sStop, green, yellow, red, offset]
+// light row: [sStop, stopFor]
 export function buildLights(lights = [], path, halfLength = 0.85) {
   return lights.map((l) => {
     let best = 0;
@@ -97,14 +97,7 @@ export function buildLights(lights = [], path, halfLength = 0.85) {
         best = i;
       }
     }
-    const c = l.cycle || {};
-    return [
-      mod(best * path.ds - halfLength, path.L),
-      c.green ?? 8,
-      c.yellow ?? 2.2,
-      c.red ?? 8,
-      l.offset || 0,
-    ];
+    return [mod(best * path.ds - halfLength, path.L), l.stopFor ?? 5];
   });
 }
 
@@ -128,17 +121,19 @@ export function pathAt(R, s) {
   return [R.X[i] + (R.X[j] - R.X[i]) * k, R.Y[i] + (R.Y[j] - R.Y[i]) * k, R.D[i]];
 }
 
-// One physics step. returns [s, v, a]
-export function stepCar(s, v, a, t, dt, R) {
+// One physics step. returns [s, v, a, waited, releasedLight]
+export function stepCar(s, v, a, t, dt, R, w, k) {
   'worklet';
   const c = R.drive;
   const L = R.L;
   const p = mod(s, L);
-  const plan = c.brake; // شتاب منفی نرم برای برنامه‌ریزی توقف
+  const plan = c.brake;
   let vLimit = c.cruise;
   let hold = false;
+  let nw = w;
+  let nk = k;
+  let arrived = false;
 
-  // پیچ‌ها: قبل از پیچ به cornerSpeed برسد
   for (let i = 0; i < R.zones.length; i++) {
     const z = R.zones[i];
     const rel = mod(p - z[0], L);
@@ -146,32 +141,35 @@ export function stepCar(s, v, a, t, dt, R) {
       vLimit = Math.min(vLimit, c.cornerSpeed);
     } else {
       const d = L - rel;
-      vLimit = Math.min(
-        vLimit,
-        Math.sqrt(c.cornerSpeed * c.cornerSpeed + 2 * plan * d)
-      );
+      vLimit = Math.min(vLimit, Math.sqrt(c.cornerSpeed * c.cornerSpeed + 2 * plan * d));
     }
   }
 
-  // چراغ‌ها: توقف کامل پشت خط، ماندن تا سبز + زمان واکنش
   for (let i = 0; i < R.lights.length; i++) {
     const l = R.lights[i];
-    const st = lightState(l, t);
     const d = mod(l[0] - p, L);
     if (d > L - 0.4) {
-      if (st[0] !== 0 && v < 0.25) hold = true; // کمی رد شده و هنوز قرمزه
+      if (nk === i) nk = -1; // از خط رد شد
       continue;
     }
-    let stop = st[0] !== 0 || (st[1] < c.reaction && v < 0.1);
-    // زرد و خیلی نزدیک: رد می‌شه
-    if (stop && st[0] === 1 && v > 0.4 && (v * v) / (2 * c.brakeMax) > d - c.margin) {
-      stop = false;
-    }
-    if (!stop) continue;
+    if (nk === i) continue; // این چراغ رو سپری کرده
     const dEff = d - c.margin;
-    if (dEff <= 0.01 || (v < 0.08 && dEff < 0.45)) hold = true;
+    if (dEff < 0.45 && v < 0.08) {
+      arrived = true;
+      nw += dt;
+      if (nw >= l[1]) {
+        nk = i;
+        nw = 0;
+        arrived = false;
+        continue; // مدت توقف تموم شد، برو
+      }
+      hold = true;
+    } else if (dEff <= 0.01) {
+      hold = true;
+    }
     vLimit = Math.min(vLimit, Math.sqrt(2 * plan * Math.max(dEff, 0)));
   }
+  if (!arrived) nw = 0;
 
   let vTarget = vLimit;
   if (hold || t < c.startDelay) vTarget = 0;
@@ -191,5 +189,5 @@ export function stepCar(s, v, a, t, dt, R) {
     nv = 0;
     na = 0;
   }
-  return [s + ((v + nv) / 2) * dt, nv, na];
+  return [s + ((v + nv) / 2) * dt, nv, na, nw, nk];
 }
