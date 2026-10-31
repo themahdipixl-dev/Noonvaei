@@ -57,10 +57,7 @@ export const VEHICLES = {
 
 // Rim image (square, transparent corners): assets/vehicles/<id>/<id>_rim.webp
 export const VEHICLE_RIMS = {
-  peugeot_pars: {
-    1: { uri: `${VEHICLE_BASE}peugeot_pars/peugeot_pars_rim_1.webp${VEHICLE_VER}` },
-    2: { uri: `${VEHICLE_BASE}peugeot_pars/peugeot_pars_rim_2.webp${VEHICLE_VER}` },
-  },
+  peugeot_pars: { uri: `${VEHICLE_BASE}peugeot_pars/peugeot_pars_rim.webp${VEHICLE_VER}` },
 };
 
 // Lavash bread stages (1 -> 5).
