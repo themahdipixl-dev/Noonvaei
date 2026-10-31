@@ -12,12 +12,12 @@ import Svg, { Polygon } from 'react-native-svg';
 import { ENV } from '../scene/environmentAssets';
 import { DIRS, buildPath, buildLights, pathAt, stepCar } from './carPhysics';
 
-// Rim: دایره‌ی چرخان که با scaleX فشرده و با rotate کج می‌شه تا بیضیِ چرخ sprite بشه.
-// d = قطر بزرگ بیضی (کسری از عرض عکس)، k = نسبت قطر کوچک/بزرگ، rot = کج‌شدن به درجه
-const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, k0, rot0, debug }) {
-  const major = rim.d * w * scale;
-  const k = rim.k ?? k0;
-  const rot = rim.rot ?? rot0;
+// Rim: بیضی با پهنا و ارتفاع مشخص (کسری از عرض/ارتفاع عکس).
+// دایره‌ی چرخان با scale به بیضی تبدیل می‌شه. rim.mirror = آینه‌ی افقی عکس رینگ
+const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, debug }) {
+  const pw = rim.w * w * scale;
+  const ph = rim.h * h * scale;
+  const side = Math.max(pw, ph);
   const sign = f[0] >= 0 ? 1 : -1; // جهت چرخش به سمت حرکت
   const spin = useAnimatedStyle(() => ({
     transform: [{ rotate: `${sign * angle.value}deg` }],
@@ -26,20 +26,25 @@ const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, k0, ro
     <View
       style={{
         position: 'absolute',
-        left: rim.x * w - major / 2,
-        top: rim.y * h - major / 2,
-        width: major,
-        height: major,
-        transform: [{ rotate: `${rot}deg` }, { scaleX: k }],
+        left: rim.x * w - side / 2,
+        top: rim.y * h - side / 2,
+        width: side,
+        height: side,
+        transform: [{ rotate: `${rim.rot || 0}deg` }, { scaleX: pw / side }, { scaleY: ph / side }],
         borderWidth: debug ? 1 : 0,
         borderColor: 'red',
-        borderRadius: major / 2,
+        borderRadius: side / 2,
       }}
     >
       <Animated.View
-        style={[{ width: major, height: major, borderRadius: major / 2, overflow: 'hidden' }, spin]}
+        style={[{ width: side, height: side, borderRadius: side / 2, overflow: 'hidden' }, spin]}
       >
-        <Image source={source} resizeMode="stretch" fadeDuration={0} style={{ width: major, height: major }} />
+        <Image
+          source={source}
+          resizeMode="stretch"
+          fadeDuration={0}
+          style={{ width: side, height: side, transform: rim.mirror ? [{ scaleX: -1 }] : [] }}
+        />
       </Animated.View>
     </View>
   );
