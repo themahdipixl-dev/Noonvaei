@@ -165,6 +165,8 @@ function CarDriver({ car, tileW, ratio, originX, originY }) {
   const sS = useSharedValue(R ? startAt * R.L : 0);
   const vS = useSharedValue(0);
   const aS = useSharedValue(0);
+  const wS = useSharedValue(0);   // ثانیه‌ی انتظار پشت چراغ
+  const kS = useSharedValue(-1);  // چراغی که ازش آزاد شده
   const clock = useSharedValue(0);
   const gx = useSharedValue(init[0]);
   const gy = useSharedValue(init[1]);
@@ -177,10 +179,12 @@ function CarDriver({ car, tileW, ratio, originX, originY }) {
     const dt = Math.min((info.timeSincePreviousFrame || 0) / 1000, 0.05);
     if (dt <= 0) return;
     clock.value += dt;
-    const r = stepCar(sS.value, vS.value, aS.value, clock.value, dt, R);
+    const r = stepCar(sS.value, vS.value, aS.value, clock.value, dt, R, wS.value, kS.value);
     sS.value = r[0];
     vS.value = r[1];
     aS.value = r[2];
+    wS.value = r[3];
+    kS.value = r[4];
     const p = pathAt(R, r[0]);
     gx.value = p[0];
     gy.value = p[1];
