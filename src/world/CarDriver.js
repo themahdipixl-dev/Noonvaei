@@ -51,12 +51,11 @@ const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, debug 
 });
 
 function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
-  const { width, anchorY, aspect, scale, offset, rims, rimScale = 1, rimK = 0.72, rimRot, debug } = car;
+  const { width, anchorY, aspect, scale, offset, rims, rimScale = 1, debug } = car;
   const w = width * (scale[dirKey] || 1);
   const h = w / (aspect[dirKey] || 1.45);
   const [ox, oy] = offset[dirKey] || [0, 0];
-  const rimSource = ENV.vehicleRims && ENV.vehicleRims[car.id];
-  const rot0 = (rimRot && rimRot[dirKey]) ?? 0;
+  const rimSet = ENV.vehicleRims && ENV.vehicleRims[car.id];
 
   const op = useAnimatedStyle(() => ({ opacity: dirV.value === index ? 1 : 0 }));
 
@@ -73,7 +72,7 @@ function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
         fadeDuration={0}
         style={{ width: w, height: h }}
       />
-      {rimSource &&
+      {rimSet &&
         ((rims && rims[dirKey]) || []).map((r, i) => (
           <Rim
             key={i}
@@ -82,10 +81,8 @@ function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
             h={h}
             f={f}
             angle={angle}
-            source={rimSource}
+            source={rimSet[r.img || 1]}
             scale={rimScale}
-            k0={rimK}
-            rot0={rot0}
             debug={debug}
           />
         ))}
