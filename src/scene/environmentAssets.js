@@ -87,7 +87,7 @@ export function preloadEnvironment() {
     ...LAVASH,
     ...Object.values(BAKER_WALK),
     ...Object.values(VEHICLES).flatMap((v) => Object.values(v)),
-    ...Object.values(VEHICLE_RIMS).flatMap((v) => Object.values(v)),
+    ...Object.values(VEHICLE_RIMS),
     ENV.bakeryFront,
     ENV.bakeryBelt,
     ENV.bakeryCutter,
