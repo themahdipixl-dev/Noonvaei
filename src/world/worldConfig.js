@@ -117,6 +117,7 @@ const DEFAULT_CAR = {
       { img: 1, mirror: true, x: 0.5367, y: 0.8785, w: 0.08, h: 0.1629 },
     ],
   },
+};
 
 export const CARS = [
   { ...DEFAULT_CAR, id: 'peugeot_pars' },
