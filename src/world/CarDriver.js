@@ -43,7 +43,7 @@ const Rim = React.memo(function Rim({ rim, w, h, f, angle, source, scale, k, rot
   );
 });
 
-function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
+function CarLayer({ car, index, dirKey, dirV, frameV, per, angle, f, ratio }) {
   const { width, anchorY, aspect, scale, offset, rims, rimScale = 1, rimK = 0.566, rimRot, debug } = car;
   const w = width * (scale[dirKey] || 1);
   const h = w / (aspect[dirKey] || 1.45);
@@ -51,7 +51,10 @@ function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
   const rimSource = ENV.vehicleRims && ENV.vehicleRims[car.id];
   const rot = (rimRot && rimRot[dirKey]) || 0;
 
-  const op = useAnimatedStyle(() => ({ opacity: dirV.value === index ? 1 : 0 }));
+  // وسط پیچ (فریم‌های بین دو جهت) این لایه پنهانه و اسپرایت‌شیت نشون داده می‌شه
+  const op = useAnimatedStyle(() => ({
+    opacity: dirV.value === index && frameV.value % per === 0 ? 1 : 0,
+  }));
 
   return (
     <Animated.View
@@ -82,6 +85,50 @@ function CarLayer({ car, index, dirKey, dirV, angle, f, ratio }) {
             debug={debug}
           />
         ))}
+    </Animated.View>
+  );
+}
+
+// ماشین وسط پیچ ۹۰ درجه: یک فریم از اسپرایت‌شیت
+function TurnLayer({ car, source, frameV, per }) {
+  const t = car.turn;
+  const w = t.width;
+  const h = w / t.aspect;
+  const [ox, oy] = t.offset || [0, 0];
+
+  const cell = useAnimatedStyle(() => {
+    const k = (Math.round(frameV.value) + (t.frameOffset || 0) + t.frames) % t.frames;
+    return {
+      transform: [
+        { translateX: -(k % t.cols) * w },
+        { translateY: -Math.floor(k / t.cols) * h },
+      ],
+    };
+  });
+  const op = useAnimatedStyle(() => ({ opacity: frameV.value % per === 0 ? 0 : 1 }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          left: -w / 2 + ox,
+          top: -h * t.anchorY + oy,
+          width: w,
+          height: h,
+          overflow: 'hidden',
+        },
+        op,
+      ]}
+    >
+      <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: t.cols * w, height: t.rows * h }, cell]}>
+        <Image
+          source={source}
+          resizeMode="stretch"
+          fadeDuration={0}
+          style={{ width: t.cols * w, height: t.rows * h }}
+        />
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -159,7 +206,10 @@ function CarDriver({ car, tileW, ratio, originX, originY }) {
     return { sw: [-fx, fy], se: [fx, fy], ne: [fx, -fy], nw: [-fx, -fy] };
   }, [ratio]);
 
-  const init = R ? pathAt(R, startAt * R.L) : [0, 0, 0];
+  const init = R ? pathAt(R, startAt * R.L) : [0, 0, 0, 0];
+  const turnSource = car.turn && ENV.vehicleTurn && ENV.vehicleTurn[car.id];
+  const per = turnSource ? car.turn.frames / 4 : 1; // تعداد فریم بین دو جهت اصلی
+  const frameV = useSharedValue(init[3]);
   const sS = useSharedValue(R ? startAt * R.L : 0);
   const vS = useSharedValue(0);
   const aS = useSharedValue(0);
@@ -187,6 +237,7 @@ function CarDriver({ car, tileW, ratio, originX, originY }) {
     gx.value = p[0];
     gy.value = p[1];
     dirV.value = p[2];
+    frameV.value = p[3];
     ang.value = ((r[0] / wheelCirc) * 360) % 360;
   });
 
@@ -208,18 +259,21 @@ function CarDriver({ car, tileW, ratio, originX, originY }) {
       <Animated.View style={[{ position: 'absolute', left: 0, top: 0, width: 0, height: 0 }, body]}>
         <Shadow cfg={shadow} tileW={tileW} ratio={ratio} alongX={false} parity={0} dirV={dirV} />
         <Shadow cfg={shadow} tileW={tileW} ratio={ratio} alongX parity={1} dirV={dirV} />
-        {DIRS.map((d, i) => (
+          {DIRS.map((d, i) => (
           <CarLayer
             key={d}
             car={car}
             index={i}
             dirKey={d}
             dirV={dirV}
+            frameV={frameV}
+            per={per}
             angle={ang}
             f={FWD[d]}
             ratio={ratio}
           />
         ))}
+        {turnSource && <TurnLayer car={car} source={turnSource} frameV={frameV} per={per} />}
       </Animated.View>
     </View>
   );
