@@ -1,5 +1,6 @@
 // Route geometry + a small driver model. Functions marked 'worklet' run on the UI thread.
 export const DIRS = ['sw', 'se', 'ne', 'nw'];
+export const TURN_FRAMES = 20;
 
 export const moveDir = (dx, dy) => {
   const sx = dx - dy;
@@ -74,6 +75,14 @@ export function buildPath(points, radius = 1.3, step = 0.05, zonePad = 0.4) {
     D.push(moveDir(X[j] - X[i], Y[j] - Y[i]));
   }
 
+    // heading frame (0..TURN_FRAMES-1) per sample, for the turn spritesheet
+  const FR = [];
+  for (let i = 0; i < N; i++) {
+    const j = (i + 1) % N;
+    const th = Math.atan2(Y[j] - Y[i], X[j] - X[i]);
+    FR.push(mod(Math.round((th / (2 * Math.PI)) * TURN_FRAMES), TURN_FRAMES));
+  }
+  
   // corner zones: [start, length]
   const zones = [];
   arcs.forEach(([a0, a1, r]) => {
@@ -82,7 +91,7 @@ export function buildPath(points, radius = 1.3, step = 0.05, zonePad = 0.4) {
     zones.push([mod(cum[a0] - sOff - zonePad, L), arcLen + zonePad * 2]);
   });
 
-  return { L, N, ds, X, Y, D, zones };
+   return { L, N, ds, X, Y, D, FR, zones };
 }
 
 // light row: [sStop, stopFor]
@@ -118,7 +127,7 @@ export function pathAt(R, s) {
   const i = fl % R.N;
   const j = (i + 1) % R.N;
   const k = f - fl;
-  return [R.X[i] + (R.X[j] - R.X[i]) * k, R.Y[i] + (R.Y[j] - R.Y[i]) * k, R.D[i]];
+  return [R.X[i] + (R.X[j] - R.X[i]) * k, R.Y[i] + (R.Y[j] - R.Y[i]) * k, R.D[i], R.FR[i]];
 }
 
 // One physics step. returns [s, v, a, waited, releasedLight]
