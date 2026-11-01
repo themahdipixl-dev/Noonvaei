@@ -60,6 +60,12 @@ export const VEHICLE_RIMS = {
   peugeot_pars: { uri: `${VEHICLE_BASE}peugeot_pars/peugeot_pars_rim.webp${VEHICLE_VER}` },
 };
 
+// 90° turn spritesheet (20 frames, 5 cols x 4 rows): assets/vehicles/<id>/<id>_spritesheet.webp
+const TURN_VER = '?v=1';
+export const VEHICLE_TURNS = {
+  peugeot_pars: { uri: `${VEHICLE_BASE}peugeot_pars/peugeot_pars_spritesheet.webp${TURN_VER}` },
+};
+
 // Lavash bread stages (1 -> 5).
 export const LAVASH = [
   f('bakery_bread_1.webp'),
@@ -77,6 +83,7 @@ export const ENV = {
   bakerWalk: BAKER_WALK,
   vehicles: VEHICLES,
   vehicleRims: VEHICLE_RIMS,
+  vehicleTurn: VEHICLE_TURNS,
   lavash: LAVASH,
 };
 
@@ -88,6 +95,7 @@ export function preloadEnvironment() {
     ...Object.values(BAKER_WALK),
     ...Object.values(VEHICLES).flatMap((v) => Object.values(v)),
     ...Object.values(VEHICLE_RIMS),
+    ...Object.values(VEHICLE_TURNS),
     ENV.bakeryFront,
     ENV.bakeryBelt,
     ENV.bakeryCutter,
